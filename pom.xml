@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>lu.uni.serval</groupId>
     <artifactId>commons-runner-utils</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.1</version>
 
     <name>Runner Utils</name>
     <url>https://github.com/UL-SnT-Serval/runner-utils</url>
@@ -19,7 +17,8 @@
         <connection>scm:git:git://github.com/UL-SnT-Serval/runner-utils.git</connection>
         <developerConnection>scm:git:git@github.com:UL-SnT-Serval/UL-SnT-Serval.git</developerConnection>
         <url>https://github.com/UL-SnT-Serval/runner-utils</url>
-    </scm>
+      <tag>commons-runner-utils-0.1.1</tag>
+  </scm>
 
     <licenses>
         <license>
