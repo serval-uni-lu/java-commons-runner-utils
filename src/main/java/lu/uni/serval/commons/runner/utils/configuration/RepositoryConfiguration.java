@@ -1,7 +1,7 @@
 package lu.uni.serval.commons.runner.utils.configuration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import tech.ikora.gitloader.git.Frequency;
+import lu.uni.serval.commons.git.utils.Frequency;
 
 import java.util.Collections;
 import java.util.Date;
@@ -26,6 +26,8 @@ public class RepositoryConfiguration extends Configuration{
     private String branch = "master";
     @JsonProperty(value = "process configuration")
     private MavenConfiguration mavenConfiguration = new MavenConfiguration();
+    @JsonProperty(value = "cherry pick")
+    private String[] cherryPick;
 
     public boolean isIgnore() {
         return ignore;
@@ -97,5 +99,13 @@ public class RepositoryConfiguration extends Configuration{
 
     public void setProcessConfiguration(MavenConfiguration process) {
         this.mavenConfiguration = process;
+    }
+
+    public String[] getCherryPick() {
+        return cherryPick;
+    }
+
+    public void setCherryPick(String[] cherryPick) {
+        this.cherryPick = cherryPick;
     }
 }

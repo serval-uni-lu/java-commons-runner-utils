@@ -1,5 +1,10 @@
 package lu.uni.serval.commons.runner.utils.version;
 
+import lu.uni.serval.commons.git.exception.InvalidGitRepositoryException;
+import lu.uni.serval.commons.git.utils.CommitCollector;
+import lu.uni.serval.commons.git.utils.GitCommit;
+import lu.uni.serval.commons.git.utils.GitUtils;
+import lu.uni.serval.commons.git.utils.LocalRepository;
 import lu.uni.serval.commons.runner.utils.configuration.GitConfiguration;
 import lu.uni.serval.commons.runner.utils.configuration.RepositoryConfiguration;
 import lu.uni.serval.commons.runner.utils.os.OsUtils;
@@ -7,11 +12,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import tech.ikora.gitloader.exception.InvalidGitRepositoryException;
-import tech.ikora.gitloader.git.CommitCollector;
-import tech.ikora.gitloader.git.GitCommit;
-import tech.ikora.gitloader.git.GitUtils;
-import tech.ikora.gitloader.git.LocalRepository;
 import lu.uni.serval.commons.runner.utils.configuration.MavenConfiguration;
 
 import java.io.File;
@@ -124,15 +124,22 @@ public class GitProvider implements VersionProvider {
 
                     logger.info("Repository loaded!");
 
-                    commitIterator = new CommitCollector()
-                            .forGit(this.repository.getGit())
-                            .onBranch(repository.getBranch())
-                            .from(repository.getStartDate())
-                            .to(repository.getEndDate())
-                            .ignoring(repository.getIgnoreCommits())
-                            .every(repository.getFrequency())
-                            .limit(repository.getMaximumCommitsNumber())
-                            .collect().iterator();
+                    if(isCherryPick(repository)){
+                        commitIterator = new CommitCollector()
+                                .forGit(this.repository.getGit())
+                                .cherryPick(repository.getCherryPick()).iterator();
+                    }
+                    else {
+                        commitIterator = new CommitCollector()
+                                .forGit(this.repository.getGit())
+                                .onBranch(repository.getBranch())
+                                .from(repository.getStartDate())
+                                .to(repository.getEndDate())
+                                .ignoring(repository.getIgnoreCommits())
+                                .every(repository.getFrequency())
+                                .limit(repository.getMaximumCommitsNumber())
+                                .collect().iterator();
+                    }
 
                     logger.info("Commits resolved!");
                 } catch (InvalidGitRepositoryException | IOException e) {
@@ -144,6 +151,10 @@ public class GitProvider implements VersionProvider {
 
                     reset();
                 }
+            }
+
+            private boolean isCherryPick(RepositoryConfiguration repository){
+                return repository.getCherryPick() != null && repository.getCherryPick().length != 0;
             }
 
             private void reset(){
