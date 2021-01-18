@@ -142,7 +142,7 @@ public class GitProvider implements VersionProvider {
                     }
 
                     logger.info("Commits resolved!");
-                } catch (InvalidGitRepositoryException | IOException e) {
+                } catch (InvalidGitRepositoryException | IOException | GitAPIException e) {
                     logger.error(String.format("Failed to initialize repository '%s': [%s] %s",
                             repository.getLocation(),
                             e.getClass().getSimpleName(),
