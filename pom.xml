@@ -7,16 +7,16 @@
     <version>0.1.2-SNAPSHOT</version>
 
     <name>Runner Utils</name>
-    <url>https://github.com/UL-SnT-Serval/runner-utils</url>
+    <url>https://github.com/UL-SnT-Serval/java-commons-runner-utils</url>
 
     <description>
         Utils to assist creation of runners to execute different projects when conducting experiments
     </description>
 
     <scm>
-        <connection>scm:git:git://github.com/UL-SnT-Serval/runner-utils.git</connection>
+        <connection>scm:git:git://github.com/UL-SnT-Serval/java-commons-runner-utils.git</connection>
         <developerConnection>scm:git:git@github.com:UL-SnT-Serval/UL-SnT-Serval.git</developerConnection>
-        <url>https://github.com/UL-SnT-Serval/runner-utils</url>
+        <url>https://github.com/UL-SnT-Serval/java-commons-runner-utils</url>
       <tag>HEAD</tag>
   </scm>
 
