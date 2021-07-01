@@ -4,7 +4,7 @@
 
     <groupId>lu.uni.serval</groupId>
     <artifactId>commons-runner-utils</artifactId>
-    <version>0.1.3</version>
+    <version>0.1.4-SNAPSHOT</version>
 
     <name>Runner Utils</name>
     <url>https://github.com/UL-SnT-Serval/java-commons-runner-utils</url>
