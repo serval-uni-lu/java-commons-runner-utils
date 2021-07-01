@@ -3,6 +3,7 @@ package lu.uni.serval.commons.runner.utils.configuration;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lu.uni.serval.commons.git.utils.Frequency;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Set;
@@ -13,9 +14,9 @@ public class RepositoryConfiguration extends Configuration{
     @JsonProperty(value = "location", required = true)
     String location = "";
     @JsonProperty(value = "start date")
-    private Date startDate;
+    private Instant startDate;
     @JsonProperty(value = "end date")
-    private Date endDate;
+    private Instant endDate;
     @JsonProperty(value = "ignore commits")
     private Set<String> ignoreCommits = Collections.emptySet();
     @JsonProperty(value = "maximum number of commits", defaultValue = "0")
@@ -45,19 +46,19 @@ public class RepositoryConfiguration extends Configuration{
         this.location = location;
     }
 
-    public Date getStartDate() {
+    public Instant getStartDate() {
         return startDate;
     }
 
-    public void setStartDate(Date startDate) {
+    public void setStartDate(Instant startDate) {
         this.startDate = startDate;
     }
 
-    public Date getEndDate() {
+    public Instant getEndDate() {
         return endDate;
     }
 
-    public void setEndDate(Date endDate) {
+    public void setEndDate(Instant endDate) {
         this.endDate = endDate;
     }
 

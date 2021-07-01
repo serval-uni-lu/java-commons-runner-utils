@@ -78,7 +78,7 @@ public class GitProvider implements VersionProvider {
                 try {
                     GitUtils.checkout(repository.getGit(), commit.getId());
 
-                    final LocalDateTime dateTime = commit.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+                    final LocalDateTime dateTime = commit.getDate().atZone(ZoneId.systemDefault()).toLocalDateTime();
 
                     version = new Version(
                             repository.getRemoteUrl(),
