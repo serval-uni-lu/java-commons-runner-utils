@@ -23,8 +23,8 @@ public class RepositoryConfiguration extends Configuration{
     private int maximumCommitsNumber = 0;
     @JsonProperty(value = "frequency", defaultValue = "UNIQUE")
     private Frequency frequency = Frequency.UNIQUE;
-    @JsonProperty(value = "branch", defaultValue = "master")
-    private String branch = "master";
+    @JsonProperty(value = "branch")
+    private String branch = null;
     @JsonProperty(value = "process configuration")
     private MavenConfiguration mavenConfiguration = new MavenConfiguration();
     @JsonProperty(value = "cherry pick")
