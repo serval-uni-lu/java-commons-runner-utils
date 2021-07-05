@@ -6,6 +6,7 @@ import lu.uni.serval.commons.runner.utils.os.OsUtils;
 
 import java.io.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class MavenLauncher extends JavaLauncher implements Synchronizable {
 
@@ -78,17 +79,22 @@ public class MavenLauncher extends JavaLauncher implements Synchronizable {
     protected Map<String, String> getEnvironment(){
         Map<String, String> localEnv = super.getEnvironment();
 
-        final List<String> formattedMavenOptions = new ArrayList<>();
-        for(Entry entry: mavenOptions){
-            formattedMavenOptions.add(entry.format("-", ":"));
-        }
-        localEnv.put("MAVEN_OPTS", String.join(" ", formattedMavenOptions));
+        final String formattedMavenOptions = mavenOptions.stream()
+                .map(e -> e.format("-", ":"))
+                .collect(Collectors.joining(" "));
 
-        final List<String> formattedJavaToolOptions = new ArrayList<>();
-        for(Entry entry: javaToolOptions){
-            formattedJavaToolOptions.add(entry.format("-D", ":"));
+        if(!formattedMavenOptions.isEmpty()){
+            localEnv.put("MAVEN_OPTS", formattedMavenOptions);
         }
-        localEnv.put("JAVA_TOOL_OPTIONS", String.join(" ", formattedJavaToolOptions));
+
+
+        final String formattedJavaToolOptions = javaToolOptions.stream()
+                .map(e -> e.format("-D", ":"))
+                .collect(Collectors.joining(" "));
+
+        if(!formattedJavaToolOptions.isEmpty()){
+            localEnv.put("JAVA_TOOL_OPTIONS", String.join(" ", formattedJavaToolOptions));
+        }
 
         return localEnv;
     }
