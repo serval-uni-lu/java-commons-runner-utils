@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Collections;
 import java.util.Set;
 
-public class GitConfiguration {
+public class GitConfiguration extends Configuration {
     @JsonProperty(value = "repositories", required = true)
     private Set<RepositoryConfiguration> repositories = Collections.emptySet();
 

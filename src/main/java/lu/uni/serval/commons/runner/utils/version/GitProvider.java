@@ -38,11 +38,9 @@ public class GitProvider implements VersionProvider {
         for(LocalRepository localRepository: repositories){
             if(localRepository == null) continue;
             if(localRepository.getGit() == null) continue;
-            if(localRepository.getGit().getRepository() == null) continue;
-            localRepository.getGit().getRepository().close();
-        }
 
-        FileUtils.forceDelete(this.tmpFolder);
+            GitUtils.close(localRepository.getGit(), true);
+        }
     }
 
     @Override
