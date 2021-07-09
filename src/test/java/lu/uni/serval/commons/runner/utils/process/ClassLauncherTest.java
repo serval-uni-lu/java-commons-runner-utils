@@ -1,5 +1,6 @@
 package lu.uni.serval.commons.runner.utils.process;
 
+import lu.uni.serval.commons.runner.utils.helpers.InfiniteLaunchableClass;
 import lu.uni.serval.commons.runner.utils.helpers.SimpleLaunchableClass;
 import org.junit.jupiter.api.Test;
 
@@ -18,5 +19,14 @@ class ClassLauncherTest {
 
         assertEquals("Hello from process with arguments: []", stringLogger.getOut().trim());
         assertEquals("", stringLogger.getErr().trim());
+    }
+
+    @Test
+    void killProcessRunningForEver() throws IOException, InterruptedException {
+        final ClassLauncher classLauncher = new ClassLauncher(InfiniteLaunchableClass.class);
+        classLauncher.execute(false);
+        assertTrue(classLauncher.isRunning());
+        classLauncher.kill();
+        assertFalse(classLauncher.isRunning());
     }
 }

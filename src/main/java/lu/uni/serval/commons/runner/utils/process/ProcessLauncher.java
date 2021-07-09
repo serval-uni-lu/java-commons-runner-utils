@@ -93,6 +93,12 @@ public abstract class ProcessLauncher implements Synchronizable {
         return this.process.exitValue();
     }
 
+    public void kill(){
+        if(isRunning()){
+            this.process.destroyForcibly();
+        }
+    }
+
     public void addListener(Listener listener){
         if(listener != null){
             this.listeners.add(listener);

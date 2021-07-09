@@ -72,6 +72,11 @@ public class MavenLauncher extends JavaLauncher implements Synchronizable {
 
     public MavenLauncher writeOutputTo(File logFile) {
         this.logFile = logFile;
+
+        if(this.logFile != null){
+            addListener(new FileLogger(this.logFile, true));
+        }
+
         return this;
     }
 
