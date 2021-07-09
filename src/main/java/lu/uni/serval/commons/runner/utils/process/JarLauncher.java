@@ -51,11 +51,6 @@ public class JarLauncher extends JavaLauncher {
         return command;
     }
 
-    @Override
-    protected Set<Listener> getListeners() {
-        return Collections.emptySet();
-    }
-
     private String getJarName(){
         return FilenameUtils.getName(jar.getAbsolutePath());
     }

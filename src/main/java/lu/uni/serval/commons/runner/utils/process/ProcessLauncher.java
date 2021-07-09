@@ -17,9 +17,11 @@ public abstract class ProcessLauncher implements Synchronizable {
     private final Map<Synchronization.Step, Thread> synchronizationThreads = new HashMap<>();
     private final Entries environmentVariables = new Entries();
     private Process process;
+    private Set<Listener> listeners = new HashSet<>();
 
     public ProcessLauncher(String name){
         processLogger = new ProcessLogger(name);
+        addListener(processLogger);
         registerSynchronizationThread(Synchronization.Step.FINISHED, processLogger);
     }
 
@@ -43,7 +45,6 @@ public abstract class ProcessLauncher implements Synchronizable {
         setEnvironment(builder);
         setDirectory(builder);
         setCommand(builder);
-        getListeners();
 
         logger.debug(String.format("Execute command: %s", String.join(" ", builder.command())));
 
@@ -70,11 +71,8 @@ public abstract class ProcessLauncher implements Synchronizable {
 
     private void startListeners(Process process){
         final InputStreamSplitter splitter = new InputStreamSplitter(process.getInputStream());
-        splitter.register(processLogger);
 
-        for(Listener listener: getListeners()){
-            splitter.register(listener);
-        }
+        this.listeners.forEach(splitter::register);
 
         splitter.start();
     }
@@ -93,6 +91,12 @@ public abstract class ProcessLauncher implements Synchronizable {
         }
 
         return this.process.exitValue();
+    }
+
+    public void addListener(Listener listener){
+        if(listener != null){
+            this.listeners.add(listener);
+        }
     }
 
     protected void registerSynchronizationThread(Synchronization.Step step, Thread thread){
@@ -123,5 +127,4 @@ public abstract class ProcessLauncher implements Synchronizable {
     }
 
     protected abstract List<String> getCommand();
-    protected abstract Set<Listener> getListeners();
 }

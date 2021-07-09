@@ -1,4 +1,4 @@
-package lu.uni.serval.commons.runner.utils;
+package lu.uni.serval.commons.runner.utils.helpers;
 
 import lu.uni.serval.commons.runner.utils.configuration.Configuration;
 import lu.uni.serval.commons.runner.utils.configuration.ConfigurationParser;

@@ -118,12 +118,4 @@ public class MavenLauncher extends JavaLauncher implements Synchronizable {
 
         return command;
     }
-
-    @Override
-    protected Set<Listener> getListeners() {
-        Set<Listener> listeners = new HashSet<>(1);
-        listeners.add(new FileLogger(logFile, true));
-
-        return listeners;
-    }
 }

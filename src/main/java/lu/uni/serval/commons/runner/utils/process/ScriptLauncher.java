@@ -27,9 +27,4 @@ public class ScriptLauncher extends ProcessLauncher{
 
         return processCommand;
     }
-
-    @Override
-    protected Set<Listener> getListeners() {
-        return Collections.emptySet();
-    }
 }
