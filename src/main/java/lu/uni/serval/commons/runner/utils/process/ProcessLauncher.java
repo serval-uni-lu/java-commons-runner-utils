@@ -95,7 +95,11 @@ public abstract class ProcessLauncher implements Synchronizable {
 
     public void kill(){
         if(isRunning()){
-            this.process.destroyForcibly();
+            Process killedProcess;
+
+            do {
+                killedProcess = this.process.destroyForcibly();
+            } while (killedProcess.isAlive());
         }
     }
 
