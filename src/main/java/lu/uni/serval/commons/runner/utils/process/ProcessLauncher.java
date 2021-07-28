@@ -14,10 +14,10 @@ public abstract class ProcessLauncher implements Synchronizable {
 
     protected File directory = null;
     protected final ProcessLogger processLogger;
-    private final Map<Synchronization.Step, Thread> synchronizationThreads = new HashMap<>();
+    private final Map<Synchronization.Step, Thread> synchronizationThreads = new EnumMap<>(Synchronization.Step.class);
     private final Entries environmentVariables = new Entries();
+    private final Set<Listener> listeners = new HashSet<>();
     private Process process;
-    private Set<Listener> listeners = new HashSet<>();
 
     public ProcessLauncher(String name){
         processLogger = new ProcessLogger(name);
@@ -46,7 +46,10 @@ public abstract class ProcessLauncher implements Synchronizable {
         setDirectory(builder);
         setCommand(builder);
 
-        logger.debug(String.format("Execute command: %s", String.join(" ", builder.command())));
+
+        if(logger.isDebugEnabled()){
+            logger.debug(String.format("Execute command: %s", String.join(" ", builder.command())));
+        }
 
         process = builder.start();
         startListeners(process);
