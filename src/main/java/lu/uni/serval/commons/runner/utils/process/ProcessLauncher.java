@@ -2,6 +2,7 @@ package lu.uni.serval.commons.runner.utils.process;
 
 import lu.uni.serval.commons.runner.utils.configuration.Entries;
 import lu.uni.serval.commons.runner.utils.configuration.Entry;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -9,20 +10,18 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-public abstract class ProcessLauncher implements Synchronizable {
+public abstract class ProcessLauncher {
     private static final Logger logger = LogManager.getLogger(ProcessLauncher.class);
 
     protected File directory = null;
     protected final ProcessLogger processLogger;
-    private final Map<Synchronization.Step, Thread> synchronizationThreads = new EnumMap<>(Synchronization.Step.class);
     private final Entries environmentVariables = new Entries();
-    private final Set<Listener> listeners = new HashSet<>();
     private Process process;
+    private Set<Listener> listeners = new HashSet<>();
 
-    public ProcessLauncher(String name){
+    public ProcessLauncher(String name) {
         processLogger = new ProcessLogger(name);
         addListener(processLogger);
-        registerSynchronizationThread(Synchronization.Step.FINISHED, processLogger);
     }
 
     protected void setDirectory(File directory){
@@ -46,10 +45,7 @@ public abstract class ProcessLauncher implements Synchronizable {
         setDirectory(builder);
         setCommand(builder);
 
-
-        if(logger.isDebugEnabled()){
-            logger.debug(String.format("Execute command: %s", String.join(" ", builder.command())));
-        }
+        logger.printf(Level.DEBUG, "Execute command: %s", String.join(" ", builder.command()));
 
         process = builder.start();
         startListeners(process);
@@ -112,10 +108,6 @@ public abstract class ProcessLauncher implements Synchronizable {
         }
     }
 
-    protected void registerSynchronizationThread(Synchronization.Step step, Thread thread){
-        synchronizationThreads.put(step, thread);
-    }
-
     protected Map<String, String> getEnvironment(){
         Map<String, String> localEnv = new HashMap<>();
 
@@ -132,11 +124,6 @@ public abstract class ProcessLauncher implements Synchronizable {
         }
 
         return Optional.empty();
-    }
-
-    @Override
-    public Optional<Thread> getThread(Synchronization.Step step) {
-        return Optional.ofNullable(synchronizationThreads.get(step));
     }
 
     protected abstract List<String> getCommand();

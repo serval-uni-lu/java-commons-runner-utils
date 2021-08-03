@@ -8,7 +8,7 @@ import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class MavenLauncher extends JavaLauncher implements Synchronizable {
+public class MavenLauncher extends JavaLauncher {
 
     private final Entries javaToolOptions = new Entries();
     private final Entries mavenOptions = new Entries();

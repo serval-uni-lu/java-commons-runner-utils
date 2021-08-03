@@ -1,10 +1,11 @@
 package lu.uni.serval.commons.runner.utils.process;
 
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class ProcessLogger extends Listener{
-    private static final Logger logger = LogManager.getLogger(ProcessSynchronizer.class);
+    private static final Logger logger = LogManager.getLogger(ProcessLogger.class);
 
     private final String name;
 
@@ -14,7 +15,7 @@ public class ProcessLogger extends Listener{
 
     @Override
     protected void onStartListening() {
-        logger.info(String.format("Process '%s' is started", name));
+        logger.printf(Level.INFO, "Process '%s' is started", name);
     }
 
     @Override
@@ -22,7 +23,7 @@ public class ProcessLogger extends Listener{
         logger.debug(line);
 
         if(line.contains("ERROR")){
-            logger.error(String.format(" [process:%s] %s", name, line));
+            logger.printf(Level.ERROR, " [process:%s] %s", name, line);
         }
 
         return true;
@@ -30,12 +31,15 @@ public class ProcessLogger extends Listener{
 
     @Override
     protected void onEndListening() {
-        logger.info(String.format("Process '%s' is ready to terminated", name));
+        logger.printf(Level.INFO,"Process '%s' is ready to terminated", name);
     }
 
     @Override
     protected void onExceptionRaised(Exception e) {
-        logger.error(String.format("Something went wrong when reading stream from process '%s': [%s] %s",
-                name, e.getClass().getSimpleName(), e.getMessage()));
+        logger.printf(Level.ERROR,
+                "Something went wrong when reading stream from process '%s': [%s] %s",
+                name, e.getClass().getSimpleName(),
+                e.getMessage()
+        );
     }
 }
