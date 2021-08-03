@@ -17,6 +17,8 @@ import java.util.Set;
 public class BrokerLauncher implements Closeable, Runnable {
     private static final Logger logger = LogManager.getLogger(BrokerLauncher.class);
 
+    private final String name;
+    private final String bindAddress;
     private final ClassLauncher launcher;
     private final ServerSocket serverSocket;
     private final Set<Runnable> readyRunnables;
@@ -24,13 +26,22 @@ public class BrokerLauncher implements Closeable, Runnable {
 
     private Socket socket;
 
-    public BrokerLauncher() throws IOException {
-        readyRunnables = new HashSet<>();
-        serverSocket = new ServerSocket(0);
-        launcher = new ClassLauncher(Broker.class);
+    public BrokerLauncher(String name, String bindAddress) throws IOException {
+        this.name = name;
+        this.bindAddress = bindAddress;
+
+        this.readyRunnables = new HashSet<>();
+        this.serverSocket = new ServerSocket(0);
+        this.launcher = new ClassLauncher(Broker.class);
 
         launcher.withFreeParameter("-management");
         launcher.withFreeParameter(String.valueOf(serverSocket.getLocalPort()));
+
+        launcher.withFreeParameter("-name");
+        launcher.withFreeParameter(name);
+
+        launcher.withFreeParameter("-bind");
+        launcher.withFreeParameter(bindAddress);
     }
 
     public void launch() throws IOException, InterruptedException {

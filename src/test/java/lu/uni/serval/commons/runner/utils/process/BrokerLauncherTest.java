@@ -13,8 +13,8 @@ class BrokerLauncherTest {
         final String bindAddress = "tcp://localhost:61616";
         final String name = "testBroker";
 
-        Observer observer = new Observer();
-        BrokerLauncher brokerLauncher = new BrokerLauncher();
+        final Observer observer = new Observer();
+        final BrokerLauncher brokerLauncher = new BrokerLauncher(name, bindAddress);
 
         brokerLauncher.onBrokerReady(() -> onBrokerReady(observer));
         brokerLauncher.launch();
