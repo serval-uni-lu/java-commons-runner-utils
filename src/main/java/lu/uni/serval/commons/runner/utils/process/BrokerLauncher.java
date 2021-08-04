@@ -1,6 +1,7 @@
 package lu.uni.serval.commons.runner.utils.process;
 
 import lu.uni.serval.commons.runner.utils.messaging.Broker;
+import lu.uni.serval.commons.runner.utils.messaging.Observer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -48,6 +49,27 @@ public class BrokerLauncher implements Closeable, Runnable {
         launcher.execute(false);
         socket = serverSocket.accept();
         new Thread(this).start();
+    }
+
+    public void launchAndWaitForReady() throws IOException, InterruptedException {
+        launcher.execute(false);
+        socket = serverSocket.accept();
+        final Observer sync = new Observer();
+
+        onBrokerReady(() -> {
+            synchronized (sync){
+                sync.touch();
+                sync.notifyAll();
+            }
+        });
+
+        new Thread(this).start();
+
+        synchronized (sync){
+            while (!sync.isTouched()){
+                sync.wait();
+            }
+        }
     }
 
     public void onBrokerReady(Runnable runnable){
