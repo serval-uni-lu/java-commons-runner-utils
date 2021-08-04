@@ -1,5 +1,11 @@
-package lu.uni.serval.commons.runner.utils.messaging;
+package lu.uni.serval.commons.runner.utils.messaging.activemq;
 
+import lu.uni.serval.commons.runner.utils.messaging.point2point.frame.EndFrame;
+import lu.uni.serval.commons.runner.utils.messaging.point2point.frame.ExceptionFrame;
+import lu.uni.serval.commons.runner.utils.messaging.point2point.transfer.Sender;
+import lu.uni.serval.commons.runner.utils.messaging.point2point.transfer.Listener;
+import lu.uni.serval.commons.runner.utils.messaging.point2point.processor.FrameProcessor;
+import lu.uni.serval.commons.runner.utils.messaging.point2point.processor.FrameProcessorFactory;
 import org.apache.activemq.broker.BrokerService;
 import org.apache.activemq.broker.TransportConnector;
 import org.apache.activemq.usage.SystemUsage;
@@ -11,15 +17,16 @@ import org.apache.logging.log4j.Logger;
 import java.io.*;
 import java.net.Socket;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 
-public class Broker implements Runnable, Closeable {
-    private static final Logger logger = LogManager.getLogger(Broker.class);
+public class BrokerProcess implements Runnable, Closeable, FrameProcessorFactory {
+    private static final Logger logger = LogManager.getLogger(BrokerProcess.class);
 
     private final BrokerService service;
-    private final Socket socket;
+    private final Socket managementSocket;
 
     public static void main(String[] args) {
+        Socket managementSocket = null;
+
         try{
             final Options options = new Options();
             final CommandLineParser parser = new DefaultParser();
@@ -32,13 +39,22 @@ public class Broker implements Runnable, Closeable {
 
             final int management = Integer.parseInt(cmd.getOptionValue("management"));
             final String bind = cmd.getOptionValue("bind", "tcp://localhost:61616");
-            final String name = cmd.getOptionValue("name", "Activemq-broker");
+            final String name = cmd.getOptionValue("name", "activemq-broker");
 
-            try(Broker broker = new Broker(bind, name, management)){
+            managementSocket = new Socket("localhost", management);
+            logger.printf(Level.INFO, "Connection established to management socket establish on port %d", managementSocket.getPort());
+
+            try(BrokerProcess broker = new BrokerProcess(bind, name, managementSocket)){
                 broker.start();
                 broker.waitUntilStopped();
             }
         } catch (Exception e) {
+            if(managementSocket != null){
+                try {
+                    Sender.sendFrame(managementSocket, new ExceptionFrame(e));
+                } catch (Exception ignore) {}
+            }
+
             logger.printf(
                     Level.ERROR,
                     "Broker terminated with error: [%s] %s",
@@ -48,6 +64,21 @@ public class Broker implements Runnable, Closeable {
 
             System.exit(-1);
         }
+        finally {
+            if(managementSocket != null){
+                try {
+                    Sender.sendFrame(managementSocket, new EndFrame("close"));
+                    managementSocket.close();
+                } catch (Exception e) {
+                    logger.printf(
+                            Level.ERROR,
+                            "Failed to close management socket: [%s] %s",
+                            e.getClass().getSimpleName(),
+                            e.getMessage()
+                    );
+                }
+            }
+        }
     }
 
     private void start() throws Exception {
@@ -55,17 +86,15 @@ public class Broker implements Runnable, Closeable {
         this.service.waitUntilStarted();
         new Thread(this).start();
 
-        String readyMessage = "READY" + System.lineSeparator();
-        this.socket.getOutputStream().write(readyMessage.getBytes(StandardCharsets.UTF_8));
+        Sender.sendFrame(managementSocket, new ReadyBrokerFrame());
     }
 
     private void waitUntilStopped() {
         this.service.waitUntilStopped();
     }
 
-    private Broker(String bindAddress, String name, int managementPort) throws Exception {
-        socket = new Socket("localhost", managementPort);
-        logger.printf(Level.INFO, "Connection established with port %d", socket.getPort());
+    private BrokerProcess(String bindAddress, String name, Socket managementSocket) throws Exception {
+        this.managementSocket = managementSocket;
 
         service = new BrokerService();
         service.setBrokerName(name);
@@ -85,19 +114,13 @@ public class Broker implements Runnable, Closeable {
     @Override
     public void run() {
         try {
-            final BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
-
             logger.info("Start management listening...");
-            while(this.service.isStarted()){
-                final String message = reader.readLine();
-                if(message == null) break;
-
-                if(message.equalsIgnoreCase("STOP")){
-                    break;
-                }
-            }
-
+            Listener.listen(managementSocket, this);
         } catch (Exception e) {
+            try {
+                Sender.sendFrame(managementSocket, new ExceptionFrame(e));
+            } catch (IOException ignore) {}
+
             logger.printf(
                     Level.ERROR,
                     "Management thread stopped abruptly: [%s] %s",
@@ -114,24 +137,18 @@ public class Broker implements Runnable, Closeable {
     public void close() {
         if(this.service != null){
             try {
+                logger.error("Stopping Service service");
                 this.service.stop();
             } catch (Exception e) {
                 logger.error("Failed to properly stop broker");
             }
         }
+    }
 
-        if(this.socket != null){
-            try {
-                socket.close();
-            } catch (IOException e) {
-                logger.printf(
-                        Level.ERROR,
-                        "Failed to properly close management socket: [%s] %s",
-                        e.getClass().getSimpleName(),
-                        e.getMessage()
-                );
-            }
-        }
+    @Override
+    public FrameProcessor getFrameProcessor(int code) {
+        if(StopBrokerFrame.CODE == code) return frame -> false;
 
+        throw new IllegalArgumentException(String.format("Frame of type %s not supported", code));
     }
 }

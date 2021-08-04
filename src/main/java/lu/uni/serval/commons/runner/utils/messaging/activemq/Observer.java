@@ -1,4 +1,4 @@
-package lu.uni.serval.commons.runner.utils.messaging;
+package lu.uni.serval.commons.runner.utils.messaging.activemq;
 
 public class Observer {
     private volatile boolean touched;
