@@ -10,6 +10,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
+import java.net.ServerSocket;
 import java.net.Socket;
 
 public class Listener {
@@ -17,22 +18,22 @@ public class Listener {
 
     private static final Logger logger = LogManager.getLogger(Listener.class);
 
-    public static void listen(Socket socket, FrameProcessorFactory frameProcessorFactory) throws IOException {
+    public static void listen(ServerSocket serverSocket, FrameProcessorFactory frameProcessorFactory) throws IOException {
         boolean isContinue = true;
 
         while(isContinue){
-            try{
+            try(Socket socket = serverSocket.accept()){
                 isContinue = processMessage(socket.getInputStream(), frameProcessorFactory);
             }
             catch (IOException e) {
                 logger.printf(Level.ERROR,
                         "Failed to accept packet while listening on port %d: [%s] %s%n",
-                        socket.getPort(),
+                        serverSocket.getLocalPort(),
                         e.getClass().getSimpleName(),
                         e.getMessage()
                 );
 
-                if(socket.isClosed()){
+                if(serverSocket.isClosed()){
                     throw e;
                 }
             }
@@ -44,11 +45,10 @@ public class Listener {
 
         try(ObjectInputStream in = new ObjectInputStream(inputStream)){
             final Frame frame = (Frame) in.readObject();
-            logger.error("Frame Received: " + frame.getClass().getSimpleName());
             isContinue = frameProcessorFactory.getFrameProcessor(frame.getCode()).process(frame);
         }
         catch (EOFException e){
-            logger.info("Closing socket");
+            logger.error("Closing socket");
             isContinue = false;
         }
         catch(IOException | IllegalArgumentException | ClassNotFoundException e) {

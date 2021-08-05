@@ -1,5 +1,6 @@
 package lu.uni.serval.commons.runner.utils.messaging.activemq;
 
+import lu.uni.serval.commons.runner.utils.messaging.point2point.frame.AddressFrame;
 import lu.uni.serval.commons.runner.utils.messaging.point2point.frame.EndFrame;
 import lu.uni.serval.commons.runner.utils.messaging.point2point.frame.ExceptionFrame;
 import lu.uni.serval.commons.runner.utils.messaging.point2point.transfer.Sender;
@@ -14,7 +15,6 @@ import org.apache.logging.log4j.Logger;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.net.Socket;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -27,15 +27,17 @@ public class Broker implements Closeable, Runnable, FrameProcessorFactory {
     private final ClassLauncher launcher;
     private final ServerSocket serverSocket;
     private final Set<Runnable> readyRunnables;
+    private final Set<Runnable> stopRunnables;
     private final Set<Consumer<Exception>> exceptionConsumers;
 
-    private Socket socket;
+    private volatile int remotePort;
 
     public Broker(String name, String bindAddress) throws IOException {
         this.name = name;
         this.bindAddress = bindAddress;
 
         this.readyRunnables = new HashSet<>();
+        this.stopRunnables = new HashSet<>();
         this.exceptionConsumers = new HashSet<>();
         this.serverSocket = new ServerSocket(0);
         this.launcher = new ClassLauncher(BrokerProcess.class);
@@ -94,6 +96,10 @@ public class Broker implements Closeable, Runnable, FrameProcessorFactory {
         readyRunnables.add(runnable);
     }
 
+    public void onBrokerStopped(Runnable runnable){
+        stopRunnables.add(runnable);
+    }
+
     public void onExceptionRaised(Consumer<Exception> consumer){
         exceptionConsumers.add(consumer);
     }
@@ -102,7 +108,7 @@ public class Broker implements Closeable, Runnable, FrameProcessorFactory {
     public void close(){
         try {
             if(launcher.isRunning()){
-                Sender.sendFrame(socket, new StopBrokerFrame());
+                Sender.sendFrame("localhost", remotePort, new StopBrokerFrame());
             }
         } catch (IOException e) {
             logger.printf(
@@ -119,8 +125,7 @@ public class Broker implements Closeable, Runnable, FrameProcessorFactory {
     @Override
     public void run() {
         try {
-            socket = serverSocket.accept();
-            Listener.listen(socket, this);
+            Listener.listen(serverSocket, this);
         } catch (Exception e) {
             logger.info("Socket closed!");
         } finally {
@@ -134,7 +139,16 @@ public class Broker implements Closeable, Runnable, FrameProcessorFactory {
 
     @Override
     public FrameProcessor getFrameProcessor(int code){
-        if(EndFrame.CODE == code) return frame -> false;
+        if(EndFrame.CODE == code) return frame -> {
+            launcher.kill();
+            stopRunnables.forEach(Runnable::run);
+            return false;
+        };
+
+        if(AddressFrame.CODE == code) return frame -> {
+            this.remotePort = ((AddressFrame)frame).getPort();
+            return true;
+        };
 
         if(ExceptionFrame.CODE == code) return frame -> {
             final Exception e = ((ExceptionFrame)frame).getException();
@@ -160,7 +174,6 @@ public class Broker implements Closeable, Runnable, FrameProcessorFactory {
 
     private void closeManagementSocket(){
         try {
-            socket.close();
             serverSocket.close();
         } catch (IOException e) {
             e.printStackTrace();
