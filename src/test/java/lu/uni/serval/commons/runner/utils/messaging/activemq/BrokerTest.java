@@ -1,5 +1,6 @@
 package lu.uni.serval.commons.runner.utils.messaging.activemq;
 
+import lu.uni.serval.commons.runner.utils.messaging.activemq.broker.Broker;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;

@@ -1,4 +1,4 @@
-package lu.uni.serval.commons.runner.utils.messaging.activemq;
+package lu.uni.serval.commons.runner.utils.messaging.activemq.broker;
 
 import lu.uni.serval.commons.runner.utils.messaging.point2point.frame.Frame;
 
