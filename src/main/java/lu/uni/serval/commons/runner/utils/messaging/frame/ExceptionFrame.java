@@ -1,4 +1,4 @@
-package lu.uni.serval.commons.runner.utils.messaging.point2point.frame;
+package lu.uni.serval.commons.runner.utils.messaging.frame;
 
 public class ExceptionFrame implements Frame {
     public static final int CODE = ExceptionFrame.class.getCanonicalName().hashCode();

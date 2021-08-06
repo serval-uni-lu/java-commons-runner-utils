@@ -12,11 +12,9 @@ import static org.junit.jupiter.api.Assertions.*;
 class BrokerTest {
     @Test
     void testStartAndStop() throws IOException, InterruptedException {
-        final String bindAddress = "tcp://localhost:61616";
-        final String name = "testBroker";
-
-        final Broker broker = new Broker(name, bindAddress);
+        final Broker broker = new Broker("testBroker", Constants.LOCALHOST, Constants.DEFAULT_BROKER_PORT);
         final Observer observer = new Observer();
+        observer.addRunner(broker::onBrokerStopped);
 
         broker.executeAndWaitForReady();
         assertTrue(broker.isRunning());
@@ -24,20 +22,9 @@ class BrokerTest {
         assertTrue(broker.isRunning());
         broker.close();
 
-        broker.onBrokerStopped(() -> {
-            synchronized (observer){
-                observer.touch();
-                observer.notifyAll();
-            }
-        });
-
-        synchronized (observer){
-            while (!observer.isTouched()){
-                observer.wait();
-            }
-        }
+        observer.waitOnMessages();
 
         assertFalse(broker.isRunning());
-        assertThrows(ConnectException.class, () -> new Socket("localhost", 61616));
+        assertThrows(ConnectException.class, () -> new Socket(Constants.LOCALHOST, Constants.DEFAULT_BROKER_PORT));
     }
 }

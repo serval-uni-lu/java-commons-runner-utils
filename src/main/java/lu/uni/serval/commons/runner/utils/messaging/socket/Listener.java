@@ -1,7 +1,7 @@
-package lu.uni.serval.commons.runner.utils.messaging.point2point.transfer;
+package lu.uni.serval.commons.runner.utils.messaging.socket;
 
-import lu.uni.serval.commons.runner.utils.messaging.point2point.frame.Frame;
-import lu.uni.serval.commons.runner.utils.messaging.point2point.processor.FrameProcessorFactory;
+import lu.uni.serval.commons.runner.utils.messaging.frame.Frame;
+import lu.uni.serval.commons.runner.utils.messaging.socket.processor.FrameProcessorFactory;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

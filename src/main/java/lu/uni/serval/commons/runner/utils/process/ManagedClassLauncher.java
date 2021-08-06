@@ -23,6 +23,10 @@ public class ManagedClassLauncher extends JavaLauncher {
         this.queueName = String.format("%s-%d", classLaunched.getSimpleName(),  System.currentTimeMillis());
     }
 
+    public ManagedClassLauncher(final Class<? extends ManagedProcess> classLaunched, final int brokerPort){
+        this(classLaunched, "localhost", brokerPort);
+    }
+
     public ManagedClassLauncher withJavaParameter(String name, String value){
         addJavaParameter(new Entry(name, value));
         return this;

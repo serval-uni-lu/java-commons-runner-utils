@@ -1,4 +1,4 @@
-package lu.uni.serval.commons.runner.utils.messaging.point2point.frame;
+package lu.uni.serval.commons.runner.utils.messaging.frame;
 
 import java.time.LocalDateTime;
 

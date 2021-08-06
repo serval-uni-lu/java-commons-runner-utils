@@ -1,6 +1,6 @@
 package lu.uni.serval.commons.runner.utils.messaging.activemq.broker;
 
-import lu.uni.serval.commons.runner.utils.messaging.point2point.frame.Frame;
+import lu.uni.serval.commons.runner.utils.messaging.frame.Frame;
 
 public class ReadyBrokerFrame implements Frame {
     public static final int CODE = ReadyBrokerFrame.class.getCanonicalName().hashCode();
