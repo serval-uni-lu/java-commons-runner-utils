@@ -2,6 +2,7 @@ package lu.uni.serval.commons.runner.utils.messaging.activemq;
 
 import lu.uni.serval.commons.runner.utils.messaging.activemq.broker.BrokerUtils;
 import lu.uni.serval.commons.runner.utils.messaging.frame.Frame;
+import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.command.ActiveMQQueue;
 import org.apache.activemq.command.ActiveMQTopic;
 
@@ -86,5 +87,35 @@ public class MessageUtils {
                 session.close();
             }
         }
+    }
+
+    public static Frame waitForMessage(String host, int port, String topicName, int code) throws JMSException {
+        final TopicConnection topicConnection = BrokerUtils.getTopicConnection(host, port);
+
+        final Session session = topicConnection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
+        final Destination destination = session.createTopic(topicName);
+        final MessageConsumer consumer = session.createConsumer(destination);
+
+        Frame frame = null;
+
+        while (frame == null){
+            try{
+                final Message message = consumer.receive();
+
+                if (message instanceof ObjectMessage) {
+                    final Frame candidate = (Frame) ((ObjectMessage)message).getObject();
+
+                    if(candidate.getCode() == code){
+                        frame = candidate;
+                    }
+                }
+            }
+            catch (Exception ignore) {}
+        }
+
+        session.close();
+        topicConnection.close();
+
+        return frame;
     }
 }

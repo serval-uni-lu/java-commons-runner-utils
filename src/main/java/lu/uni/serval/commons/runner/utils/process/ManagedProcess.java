@@ -1,8 +1,10 @@
 package lu.uni.serval.commons.runner.utils.process;
 
 import lu.uni.serval.commons.runner.utils.messaging.activemq.Constants;
+import lu.uni.serval.commons.runner.utils.messaging.activemq.MessageUtils;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.broker.BrokerUtils;
 import lu.uni.serval.commons.runner.utils.messaging.frame.Frame;
+import lu.uni.serval.commons.runner.utils.messaging.frame.ReadyFrame;
 import lu.uni.serval.commons.runner.utils.messaging.frame.StopFrame;
 import org.apache.activemq.Closeable;
 import org.apache.commons.cli.*;
@@ -15,6 +17,8 @@ import java.util.Set;
 
 public abstract class ManagedProcess implements Closeable, ExceptionListener, MessageListener {
     private static final Logger logger = LogManager.getLogger(ManagedProcess.class);
+
+    private String queueName;
 
     private TopicConnection topicConnection;
     private TopicSession topicSession;
@@ -29,7 +33,9 @@ public abstract class ManagedProcess implements Closeable, ExceptionListener, Me
 
         connectBroker(cmd);
         working = true;
+
         try {
+            MessageUtils.sendMessageToTopic(topicConnection, queueName, new ReadyFrame());
             doWork(cmd);
         }
         finally {
@@ -60,10 +66,10 @@ public abstract class ManagedProcess implements Closeable, ExceptionListener, Me
     }
 
     private void connectBroker(CommandLine cmd) throws JMSException {
-        final String queueName = cmd.getOptionValue("queueName");
         final String brokerHost = cmd.getOptionValue("brokerHost");
         final int brokerPort = Integer.parseInt(cmd.getOptionValue("brokerPort"));
 
+        queueName = cmd.getOptionValue("queueName");
         queueConnection = BrokerUtils.getQueueConnection(brokerHost, brokerPort);
         queueSession = queueConnection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
         final Queue queue = queueSession.createQueue(queueName);

@@ -25,6 +25,9 @@ public class Broker implements Closeable, Runnable, FrameProcessorFactory {
     private static final Logger logger = LogManager.getLogger(Broker.class);
 
     private final String name;
+    private final String host;
+    private final int port;
+
     private final ClassLauncher launcher;
     private final ServerSocket serverSocket;
     private final Set<Runnable> readyRunnables;
@@ -35,6 +38,8 @@ public class Broker implements Closeable, Runnable, FrameProcessorFactory {
 
     public Broker(String name, String host, int port) throws IOException {
         this.name = name;
+        this.host = host;
+        this.port = port;
 
         this.readyRunnables = new HashSet<>();
         this.stopRunnables = new HashSet<>();
@@ -46,17 +51,25 @@ public class Broker implements Closeable, Runnable, FrameProcessorFactory {
         launcher.withFreeParameter(String.valueOf(serverSocket.getLocalPort()));
 
         launcher.withFreeParameter("-name");
-        launcher.withFreeParameter(name);
+        launcher.withFreeParameter(this.name);
 
         launcher.withFreeParameter("-host");
-        launcher.withFreeParameter(host);
+        launcher.withFreeParameter(this.host);
 
         launcher.withFreeParameter("-port");
-        launcher.withFreeParameter(String.valueOf(port));
+        launcher.withFreeParameter(String.valueOf(this.port));
     }
 
     public String getName() {
         return name;
+    }
+
+    public String getHost() {
+        return host;
+    }
+
+    public int getPort() {
+        return port;
     }
 
     public void execute() throws IOException, InterruptedException {
