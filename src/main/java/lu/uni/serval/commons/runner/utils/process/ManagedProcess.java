@@ -3,9 +3,7 @@ package lu.uni.serval.commons.runner.utils.process;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.Constants;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.MessageUtils;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.broker.BrokerUtils;
-import lu.uni.serval.commons.runner.utils.messaging.frame.Frame;
-import lu.uni.serval.commons.runner.utils.messaging.frame.ReadyFrame;
-import lu.uni.serval.commons.runner.utils.messaging.frame.StopFrame;
+import lu.uni.serval.commons.runner.utils.messaging.frame.*;
 import org.apache.activemq.Closeable;
 import org.apache.commons.cli.*;
 import org.apache.logging.log4j.Level;
@@ -18,7 +16,10 @@ import java.util.Set;
 public abstract class ManagedProcess implements Closeable, ExceptionListener, MessageListener {
     private static final Logger logger = LogManager.getLogger(ManagedProcess.class);
 
-    private String queueName;
+    private String brokerHost;
+    private int brokerPort;
+
+    private String name;
 
     private TopicConnection topicConnection;
     private TopicSession topicSession;
@@ -35,7 +36,7 @@ public abstract class ManagedProcess implements Closeable, ExceptionListener, Me
         working = true;
 
         try {
-            MessageUtils.sendMessageToTopic(topicConnection, queueName, new ReadyFrame());
+            MessageUtils.sendMessageToTopic(topicConnection, name, new ReadyFrame());
             doWork(cmd);
         }
         finally {
@@ -53,7 +54,7 @@ public abstract class ManagedProcess implements Closeable, ExceptionListener, Me
         final Option hostOption = new Option("brokerHost", true, "Hostname of the broker");
         hostOption.setRequired(true);
 
-        final Option queueOption = new Option("queueName", true, "Name of the queue where to send messages");
+        final Option queueOption = new Option("name", true, "Name of the queue where to send messages");
         queueOption.setRequired(true);
 
         options.addOption(portOption);
@@ -66,17 +67,17 @@ public abstract class ManagedProcess implements Closeable, ExceptionListener, Me
     }
 
     private void connectBroker(CommandLine cmd) throws JMSException {
-        final String brokerHost = cmd.getOptionValue("brokerHost");
-        final int brokerPort = Integer.parseInt(cmd.getOptionValue("brokerPort"));
+        brokerHost = cmd.getOptionValue("brokerHost");
+        brokerPort = Integer.parseInt(cmd.getOptionValue("brokerPort"));
 
-        queueName = cmd.getOptionValue("queueName");
-        queueConnection = BrokerUtils.getQueueConnection(brokerHost, brokerPort);
+        name = cmd.getOptionValue("name");
+        queueConnection = BrokerUtils.getQueueConnection(this.brokerHost, this.brokerPort);
         queueSession = queueConnection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
-        final Queue queue = queueSession.createQueue(queueName);
+        final Queue queue = queueSession.createQueue(name);
         final MessageConsumer queueConsumer = queueSession.createConsumer(queue);
         queueConsumer.setMessageListener(this);
 
-        topicConnection = BrokerUtils.getTopicConnection(brokerHost, brokerPort);
+        topicConnection = BrokerUtils.getTopicConnection(this.brokerHost, this.brokerPort);
         topicSession = topicConnection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
         final Topic topic = topicSession.createTopic(Constants.ADMIN_TOPIC);
         final MessageConsumer topicConsumer = topicSession.createConsumer(topic);
@@ -96,6 +97,8 @@ public abstract class ManagedProcess implements Closeable, ExceptionListener, Me
 
         topicSession.close();
         topicConnection.close();
+
+        MessageUtils.sendMessageToTopic(this.brokerHost, this.brokerPort, name, new ClosingFrame());
     }
 
     @Override

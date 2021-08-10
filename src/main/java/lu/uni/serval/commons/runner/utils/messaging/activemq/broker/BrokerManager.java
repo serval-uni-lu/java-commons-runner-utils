@@ -21,8 +21,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
 
-public class Broker implements Closeable, Runnable, FrameProcessorFactory {
-    private static final Logger logger = LogManager.getLogger(Broker.class);
+public class BrokerManager implements Closeable, Runnable, FrameProcessorFactory {
+    private static final Logger logger = LogManager.getLogger(BrokerManager.class);
 
     private final String name;
     private final String host;
@@ -36,7 +36,7 @@ public class Broker implements Closeable, Runnable, FrameProcessorFactory {
 
     private volatile int remotePort;
 
-    public Broker(String name, String host, int port) throws IOException {
+    public BrokerManager(String name, String host, int port) throws IOException {
         this.name = name;
         this.host = host;
         this.port = port;

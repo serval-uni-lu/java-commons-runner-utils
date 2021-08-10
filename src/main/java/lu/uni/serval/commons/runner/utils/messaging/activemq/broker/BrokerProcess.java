@@ -17,9 +17,6 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import javax.jms.Connection;
-import javax.jms.Session;
-import javax.jms.Topic;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.URI;

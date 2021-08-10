@@ -12,7 +12,7 @@ public class ManagedClassLauncher extends JavaLauncher {
     private final List<String> freeParameters = new ArrayList<>();
     private final String brokerHost;
     private final int brokerPort;
-    private final String queueName;
+    private final String name;
 
     public ManagedClassLauncher(final Class<? extends ManagedProcess> classLaunched, final String brokerHost, final int brokerPort) {
         super(classLaunched.getName());
@@ -20,7 +20,7 @@ public class ManagedClassLauncher extends JavaLauncher {
         this.classLaunched = classLaunched;
         this.brokerHost = brokerHost;
         this.brokerPort = brokerPort;
-        this.queueName = String.format("%s-%d", classLaunched.getSimpleName(),  System.currentTimeMillis());
+        this.name = String.format("%s-%d", classLaunched.getSimpleName(),  System.currentTimeMillis());
     }
 
     public ManagedClassLauncher(final Class<? extends ManagedProcess> classLaunched, final int brokerPort){
@@ -57,15 +57,15 @@ public class ManagedClassLauncher extends JavaLauncher {
         command.add("-brokerPort");
         command.add(String.valueOf(this.brokerPort));
 
-        command.add("-queueName");
-        command.add(queueName);
+        command.add("-name");
+        command.add(name);
 
         command.addAll(freeParameters);
 
         return command;
     }
 
-    public String getQueueName() {
-        return this.queueName;
+    public String getName() {
+        return this.name;
     }
 }
