@@ -25,17 +25,19 @@ import java.io.File;
 import java.io.IOException;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.deser.BeanDeserializerModifier;
 import com.fasterxml.jackson.databind.deser.ResolvableDeserializer;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class ConfigurationParser {
+    private ConfigurationParser() {}
+
     private static final Logger logger = LogManager.getLogger(ConfigurationParser.class);
 
     public static <T extends Configuration> T parse(String config, Class<T> type) throws IOException {
@@ -47,10 +49,14 @@ public class ConfigurationParser {
 
         final ObjectMapper mapper = new ObjectMapper();
         mapper.registerModules(new Jdk8Module(), new FolderModule(file.getParentFile()));
+        mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
 
         final T mercatorConfiguration = mapper.readValue(file, type);
 
-        logger.info("Configuration loaded from " + config);
+        logger.printf(Level.INFO,
+                "Configuration loaded from '%s'",
+                config
+        );
 
         return mercatorConfiguration;
     }
@@ -96,7 +102,7 @@ public class ConfigurationParser {
         }
 
         @Override
-        public T deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+        public T deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
             T configuration = (T) defaultDeserializer.deserialize(p, ctxt);
             configuration.setFolder(this.folder);
 
