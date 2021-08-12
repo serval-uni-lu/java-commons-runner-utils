@@ -1,5 +1,6 @@
 package lu.uni.serval.commons.runner.utils.messaging.activemq;
 
+import lu.uni.serval.commons.runner.utils.exception.NotInitializedException;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.broker.BrokerUtils;
 import lu.uni.serval.commons.runner.utils.messaging.frame.Frame;
 import org.apache.activemq.command.ActiveMQQueue;
@@ -10,15 +11,11 @@ import javax.jms.*;
 public class MessageUtils {
     private MessageUtils() {}
 
-    public static void sendMessageToTopic(int port, String topicName, Frame frame) throws JMSException {
-        sendMessageToTopic(Constants.LOCALHOST, port, topicName, frame);
-    }
-
-    public static void sendMessageToTopic(String host, int port, String topicName, Frame frame) throws JMSException {
+    public static void sendMessageToTopic(String topicName, Frame frame) throws JMSException, NotInitializedException {
         TopicConnection connection = null;
 
         try{
-            connection = BrokerUtils.getTopicConnection(host, port);
+            connection = BrokerUtils.getTopicConnection();
             sendMessageToTopic(connection, topicName, frame);
         }
         finally {
@@ -49,15 +46,11 @@ public class MessageUtils {
         }
     }
 
-    public static void sendMessageToQueue(int port, String queueName, Frame frame) throws JMSException {
-        sendMessageToQueue(Constants.LOCALHOST, port, queueName, frame);
-    }
-
-    public static void sendMessageToQueue(String host, int port, String queueName, Frame frame) throws JMSException {
+    public static void sendMessageToQueue(String queueName, Frame frame) throws JMSException, NotInitializedException {
         QueueConnection connection = null;
 
         try{
-            connection = BrokerUtils.getQueueConnection(host, port);
+            connection = BrokerUtils.getQueueConnection();
             sendMessageToQueue(connection, queueName, frame);
         }
         finally {
@@ -88,8 +81,8 @@ public class MessageUtils {
         }
     }
 
-    public static Frame waitForMessage(String host, int port, String topicName, int code) throws JMSException {
-        final TopicConnection topicConnection = BrokerUtils.getTopicConnection(host, port);
+    public static Frame waitForMessage(String topicName, int code) throws JMSException, NotInitializedException {
+        final TopicConnection topicConnection = BrokerUtils.getTopicConnection();
 
         final Session session = topicConnection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
         final Destination destination = session.createTopic(topicName);
@@ -109,7 +102,9 @@ public class MessageUtils {
                     }
                 }
             }
-            catch (Exception ignore) {}
+            catch (Exception ignore) {
+                //ignore
+            }
         }
 
         session.close();

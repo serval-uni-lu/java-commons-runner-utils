@@ -1,5 +1,6 @@
 package lu.uni.serval.commons.runner.utils.messaging.activemq.broker;
 
+import lu.uni.serval.commons.runner.utils.exception.NotInitializedException;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.Observer;
 import lu.uni.serval.commons.runner.utils.messaging.frame.AddressFrame;
 import lu.uni.serval.commons.runner.utils.messaging.frame.EndFrame;
@@ -25,8 +26,6 @@ public class BrokerManager implements Closeable, Runnable, FrameProcessorFactory
     private static final Logger logger = LogManager.getLogger(BrokerManager.class);
 
     private final String name;
-    private final String host;
-    private final int port;
 
     private final ClassLauncher launcher;
     private final ServerSocket serverSocket;
@@ -36,10 +35,8 @@ public class BrokerManager implements Closeable, Runnable, FrameProcessorFactory
 
     private volatile int remotePort;
 
-    public BrokerManager(String name, String host, int port) throws IOException {
+    public BrokerManager(String name) throws IOException, NotInitializedException {
         this.name = name;
-        this.host = host;
-        this.port = port;
 
         this.readyRunnables = new HashSet<>();
         this.stopRunnables = new HashSet<>();
@@ -53,23 +50,12 @@ public class BrokerManager implements Closeable, Runnable, FrameProcessorFactory
         launcher.withFreeParameter("-name");
         launcher.withFreeParameter(this.name);
 
-        launcher.withFreeParameter("-host");
-        launcher.withFreeParameter(this.host);
-
-        launcher.withFreeParameter("-port");
-        launcher.withFreeParameter(String.valueOf(this.port));
+        launcher.withFreeParameter("-brokerUrl");
+        launcher.withFreeParameter(BrokerInfo.url());
     }
 
     public String getName() {
         return name;
-    }
-
-    public String getHost() {
-        return host;
-    }
-
-    public int getPort() {
-        return port;
     }
 
     public void execute() throws IOException, InterruptedException {

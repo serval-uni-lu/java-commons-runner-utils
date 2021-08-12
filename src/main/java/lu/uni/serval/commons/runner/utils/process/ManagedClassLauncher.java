@@ -2,6 +2,8 @@ package lu.uni.serval.commons.runner.utils.process;
 
 import lu.uni.serval.commons.runner.utils.configuration.Entries;
 import lu.uni.serval.commons.runner.utils.configuration.Entry;
+import lu.uni.serval.commons.runner.utils.exception.NotInitializedException;
+import lu.uni.serval.commons.runner.utils.messaging.activemq.broker.BrokerInfo;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -10,21 +12,15 @@ import java.util.List;
 public class ManagedClassLauncher extends JavaLauncher {
     private final Class<? extends ManagedProcess> classLaunched;
     private final List<String> freeParameters = new ArrayList<>();
-    private final String brokerHost;
-    private final int brokerPort;
     private final String name;
+    private final String brokerUrl;
 
-    public ManagedClassLauncher(final Class<? extends ManagedProcess> classLaunched, final String brokerHost, final int brokerPort) {
+    public ManagedClassLauncher(final Class<? extends ManagedProcess> classLaunched) throws NotInitializedException {
         super(classLaunched.getName());
 
         this.classLaunched = classLaunched;
-        this.brokerHost = brokerHost;
-        this.brokerPort = brokerPort;
         this.name = String.format("%s-%d", classLaunched.getSimpleName(),  System.currentTimeMillis());
-    }
-
-    public ManagedClassLauncher(final Class<? extends ManagedProcess> classLaunched, final int brokerPort){
-        this(classLaunched, "localhost", brokerPort);
+        this.brokerUrl = BrokerInfo.url();
     }
 
     public ManagedClassLauncher withJavaParameter(String name, String value){
@@ -51,14 +47,11 @@ public class ManagedClassLauncher extends JavaLauncher {
         command.add(System.getProperty("java.class.path"));
         command.add(this.classLaunched.getName());
 
-        command.add("-brokerHost");
-        command.add(this.brokerHost);
-
-        command.add("-brokerPort");
-        command.add(String.valueOf(this.brokerPort));
-
         command.add("-name");
-        command.add(name);
+        command.add(this.name);
+
+        command.add("-brokerUrl");
+        command.add(this.brokerUrl);
 
         command.addAll(freeParameters);
 

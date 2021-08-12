@@ -1,6 +1,5 @@
 package lu.uni.serval.commons.runner.utils.messaging.activemq.broker;
 
-import lu.uni.serval.commons.runner.utils.messaging.activemq.Constants;
 import lu.uni.serval.commons.runner.utils.messaging.frame.AddressFrame;
 import lu.uni.serval.commons.runner.utils.messaging.frame.EndFrame;
 import lu.uni.serval.commons.runner.utils.messaging.frame.ExceptionFrame;
@@ -30,29 +29,22 @@ public class BrokerProcess implements Runnable, Closeable, FrameProcessorFactory
     private final int remotePort;
 
     public static void main(String[] args) {
-        ServerSocket managementSocket = null;
         int remotePort = -1;
 
-        try{
+        try(ServerSocket managementSocket = new ServerSocket(0)){
             final Options options = new Options();
             final CommandLineParser parser = new DefaultParser();
 
             options.addOption("management", true, "Management port number");
             options.addOption("name", true, "Name of the broker");
-            options.addOption("host", true, "Hostname for the broker process");
-            options.addOption("port", true, "Port number for the broker process");
+            options.addOption("brokerUrl", true, "URL for the broker process");
 
             final CommandLine cmd = parser.parse(options, args);
 
             remotePort = Integer.parseInt(cmd.getOptionValue("management"));
 
-            final String brokerHost = cmd.getOptionValue("host", Constants.LOCALHOST);
-            final int brokerPort = Integer.parseInt(cmd.getOptionValue("port", String.valueOf(Constants.DEFAULT_BROKER_PORT)));
-            final String brokerUrl = String.format("tcp://%s:%s", brokerHost, brokerPort);
-
             final String name = cmd.getOptionValue("name", "activemq-broker");
-
-            managementSocket = new ServerSocket(0);
+            final String brokerUrl = cmd.getOptionValue("brokerUrl");
 
             try(BrokerProcess broker = new BrokerProcess(brokerUrl, name, managementSocket, remotePort)){
                 broker.start();
@@ -61,11 +53,15 @@ public class BrokerProcess implements Runnable, Closeable, FrameProcessorFactory
 
                 broker.waitUntilStopped();
             }
+
+            Sender.sendFrame(remotePort, new EndFrame("close"));
         } catch (Exception e) {
             if(remotePort != -1){
                 try {
                     Sender.sendFrame(remotePort, new ExceptionFrame(e));
-                } catch (Exception ignore) {}
+                } catch (Exception ignore) {
+                    //ignore
+                }
             }
 
             logger.printf(
@@ -76,21 +72,6 @@ public class BrokerProcess implements Runnable, Closeable, FrameProcessorFactory
             );
 
             System.exit(-1);
-        }
-        finally {
-            if(managementSocket != null){
-                try {
-                    managementSocket.close();
-                    Sender.sendFrame(remotePort, new EndFrame("close"));
-                } catch (Exception e) {
-                    logger.printf(
-                            Level.ERROR,
-                            "Failed to close management socket: [%s] %s",
-                            e.getClass().getSimpleName(),
-                            e.getMessage()
-                    );
-                }
-            }
         }
     }
 
@@ -138,7 +119,9 @@ public class BrokerProcess implements Runnable, Closeable, FrameProcessorFactory
         } catch (Exception e) {
             try {
                 Sender.sendFrame(remotePort, new ExceptionFrame(e));
-            } catch (IOException ignore) {}
+            } catch (IOException ignore) {
+                //ignore
+            }
 
             logger.printf(
                     Level.ERROR,

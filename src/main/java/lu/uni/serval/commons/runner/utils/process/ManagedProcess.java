@@ -1,7 +1,10 @@
 package lu.uni.serval.commons.runner.utils.process;
 
+import lu.uni.serval.commons.runner.utils.exception.AlreadyInitializedException;
+import lu.uni.serval.commons.runner.utils.exception.NotInitializedException;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.Constants;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.MessageUtils;
+import lu.uni.serval.commons.runner.utils.messaging.activemq.broker.BrokerInfo;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.broker.BrokerUtils;
 import lu.uni.serval.commons.runner.utils.messaging.frame.*;
 import org.apache.activemq.Closeable;
@@ -15,9 +18,6 @@ import java.util.Set;
 
 public abstract class ManagedProcess implements Closeable, ExceptionListener, MessageListener {
     private static final Logger logger = LogManager.getLogger(ManagedProcess.class);
-
-    private String brokerHost;
-    private int brokerPort;
 
     private String name;
 
@@ -48,17 +48,13 @@ public abstract class ManagedProcess implements Closeable, ExceptionListener, Me
         final Options options = new Options();
         final CommandLineParser parser = new DefaultParser();
 
-        final Option portOption = new Option("brokerPort", true, "Port number of the broker");
-        portOption.setRequired(true);
-
-        final Option hostOption = new Option("brokerHost", true, "Hostname of the broker");
-        hostOption.setRequired(true);
+        final Option urlOption = new Option("brokerUrl", true, "URL of the ActiveMQ broker");
+        urlOption.setRequired(true);
 
         final Option queueOption = new Option("name", true, "Name of the queue where to send messages");
         queueOption.setRequired(true);
 
-        options.addOption(portOption);
-        options.addOption(hostOption);
+        options.addOption(urlOption);
         options.addOption(queueOption);
 
         getOptions().forEach(options::addOption);
@@ -66,18 +62,18 @@ public abstract class ManagedProcess implements Closeable, ExceptionListener, Me
         return parser.parse(options, args);
     }
 
-    private void connectBroker(CommandLine cmd) throws JMSException {
-        brokerHost = cmd.getOptionValue("brokerHost");
-        brokerPort = Integer.parseInt(cmd.getOptionValue("brokerPort"));
+    private void connectBroker(CommandLine cmd) throws JMSException, AlreadyInitializedException, NotInitializedException {
+        final String brokerUrl = cmd.getOptionValue("brokerUrl");
+        BrokerInfo.initialize(brokerUrl);
 
         name = cmd.getOptionValue("name");
-        queueConnection = BrokerUtils.getQueueConnection(this.brokerHost, this.brokerPort);
+        queueConnection = BrokerUtils.getQueueConnection();
         queueSession = queueConnection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
         final Queue queue = queueSession.createQueue(name);
         final MessageConsumer queueConsumer = queueSession.createConsumer(queue);
         queueConsumer.setMessageListener(this);
 
-        topicConnection = BrokerUtils.getTopicConnection(this.brokerHost, this.brokerPort);
+        topicConnection = BrokerUtils.getTopicConnection();
         topicSession = topicConnection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
         final Topic topic = topicSession.createTopic(Constants.ADMIN_TOPIC);
         final MessageConsumer topicConsumer = topicSession.createConsumer(topic);
@@ -98,7 +94,16 @@ public abstract class ManagedProcess implements Closeable, ExceptionListener, Me
         topicSession.close();
         topicConnection.close();
 
-        MessageUtils.sendMessageToTopic(this.brokerHost, this.brokerPort, name, new ClosingFrame());
+        try {
+            MessageUtils.sendMessageToTopic(name, new ClosingFrame());
+        } catch (NotInitializedException e) {
+            logger.printf(Level.ERROR,
+                    "Failed to send closing frame for %s: [%s] %s",
+                    this.getClass().getName(),
+                    e.getClass().getSimpleName(),
+                    e.getMessage()
+            );
+        }
     }
 
     @Override
