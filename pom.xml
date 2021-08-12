@@ -108,7 +108,7 @@
                     <verbose>false</verbose>
                     <organizationName>University of Luxembourg, Renaud RWEMALIKA</organizationName>
                     <inceptionYear>2021</inceptionYear>
-                    <projectName>JSON Aggregator</projectName>
+                    <projectName>Runner Utils</projectName>
                     <licenseName>apache_v2</licenseName>
                     <excludes>
                         <exclude>*.json</exclude>
