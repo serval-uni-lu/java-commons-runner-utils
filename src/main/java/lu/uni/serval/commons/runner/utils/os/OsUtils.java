@@ -27,6 +27,8 @@ import java.io.File;
 import java.io.IOException;
 
 public class OsUtils {
+    private OsUtils() {}
+
     private static final String OS  = System.getProperty("os.name");
 
     public static boolean isWindows() {

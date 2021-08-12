@@ -31,7 +31,7 @@ public abstract class JavaLauncher extends ProcessLauncher {
     private File javaHome;
     private final Entries javaParameters = new Entries();
 
-    public JavaLauncher(String name) {
+    protected JavaLauncher(String name) {
         super(name);
     }
 

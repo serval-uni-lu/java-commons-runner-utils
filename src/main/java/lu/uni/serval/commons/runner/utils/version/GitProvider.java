@@ -29,6 +29,7 @@ import lu.uni.serval.commons.git.utils.LocalRepository;
 import lu.uni.serval.commons.runner.utils.configuration.GitConfiguration;
 import lu.uni.serval.commons.runner.utils.configuration.RepositoryConfiguration;
 import lu.uni.serval.commons.runner.utils.os.OsUtils;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -128,7 +129,10 @@ public class GitProvider implements VersionProvider {
 
                     final File repositoryFolder = new File(tmpFolder, GitUtils.extractProjectName(repository.getLocation()));
 
-                    logger.info(String.format("Loading repository from %s...", repository.getLocation()));
+                    logger.printf(Level.INFO,
+                            "Loading repository from %s...",
+                            repository.getLocation()
+                    );
 
                     this.repository = GitUtils.loadCurrentRepository(
                             repository.getLocation(),

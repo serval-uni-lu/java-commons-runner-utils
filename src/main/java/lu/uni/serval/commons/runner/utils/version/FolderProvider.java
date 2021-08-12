@@ -69,18 +69,14 @@ public class FolderProvider implements VersionProvider {
                 final File subFolder = subFoldersIterator.next();
                 LocalDateTime date;
                 String commitId;
-                switch (nameFormat){
-                    case DATE:
-                        date = LocalDateTime.parse(subFolder.getName(), DateTimeFormatter.ofPattern(dateFormat));
-                        commitId = String.format("Commit%d", ++commitCounter);
-                        break;
 
-                    case VERSION:
+                if(nameFormat == FolderConfiguration.NameFormat.DATE) {
+                    date = LocalDateTime.parse(subFolder.getName(), DateTimeFormatter.ofPattern(dateFormat));
+                    commitId = String.format("Commit%d", ++commitCounter);
+                }
+                else {
                         date = LocalDateTime.now();
                         commitId = subFolder.getName();
-                        break;
-
-                    default: throw new RuntimeException("nameFormat needs to be either DATE or VERSION");
                 }
 
                 return new Version(
@@ -104,18 +100,16 @@ public class FolderProvider implements VersionProvider {
                 final String name1 = file1.getName();
                 final String name2 = file2.getName();
 
-                int compare = 0;
+                int compare;
 
-                switch (nameFormat){
-                    case VERSION:
-                        compare = name1.compareToIgnoreCase(name2);
-                        break;
-                    case DATE:
-                        final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormat);
-                        final LocalDate date1 = LocalDate.from(dateTimeFormatter.parse(name1));
-                        final LocalDate date2 = LocalDate.from(dateTimeFormatter.parse(name2));
-                        compare = date1.compareTo(date2);
-                        break;
+                if(nameFormat == FolderConfiguration.NameFormat.DATE){
+                    final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormat);
+                    final LocalDate date1 = LocalDate.from(dateTimeFormatter.parse(name1));
+                    final LocalDate date2 = LocalDate.from(dateTimeFormatter.parse(name2));
+                    compare = date1.compareTo(date2);
+                }
+                else {
+                    compare = name1.compareToIgnoreCase(name2);
                 }
 
                 return compare;

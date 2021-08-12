@@ -179,7 +179,11 @@ public class BrokerManager implements Closeable, Runnable, FrameProcessorFactory
         try {
             serverSocket.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.printf(Level.ERROR,
+                    "Failed to close the broker management socket: [%s] %s",
+                    e.getClass().getSimpleName(),
+                    e.getMessage()
+            );
         }
     }
 }
