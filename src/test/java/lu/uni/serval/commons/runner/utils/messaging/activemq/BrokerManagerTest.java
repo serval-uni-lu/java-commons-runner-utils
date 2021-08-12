@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class BrokerManagerTest {
     @Test
     void testStartAndStop() throws IOException, InterruptedException, AlreadyInitializedException, NotInitializedException {
-        BrokerInfo.initialize("tcp", Constants.LOCALHOST, Constants.DEFAULT_BROKER_PORT);
+        BrokerInfo.initialize(Constants.DEFAULT_BROKER_PROTOCOL, Constants.DEFAULT_BROKER_HOST, Constants.DEFAULT_BROKER_PORT);
         final BrokerManager brokerManager = new BrokerManager("testBroker");
         final Observer observer = new Observer();
         observer.addRunner(brokerManager::onBrokerStopped);
@@ -29,6 +29,6 @@ class BrokerManagerTest {
         observer.waitOnMessages();
 
         assertFalse(brokerManager.isRunning());
-        assertThrows(ConnectException.class, () -> new Socket(Constants.LOCALHOST, Constants.DEFAULT_BROKER_PORT));
+        assertThrows(ConnectException.class, () -> new Socket(Constants.DEFAULT_BROKER_HOST, Constants.DEFAULT_BROKER_PORT));
     }
 }

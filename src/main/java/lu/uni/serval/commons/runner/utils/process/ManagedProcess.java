@@ -75,7 +75,7 @@ public abstract class ManagedProcess implements Closeable, ExceptionListener, Me
 
         topicConnection = BrokerUtils.getTopicConnection();
         topicSession = topicConnection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
-        final Topic topic = topicSession.createTopic(Constants.ADMIN_TOPIC);
+        final Topic topic = topicSession.createTopic(Constants.TOPIC_ADMIN);
         final MessageConsumer topicConsumer = topicSession.createConsumer(topic);
         topicConsumer.setMessageListener(this);
     }

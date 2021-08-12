@@ -25,7 +25,7 @@ class ManagedClassLauncherTest {
 
     @BeforeAll
     static void startBroker() throws IOException, InterruptedException, AlreadyInitializedException, NotInitializedException {
-        BrokerInfo.initialize("tcp", Constants.LOCALHOST, Constants.DEFAULT_BROKER_PORT);
+        BrokerInfo.initialize(Constants.DEFAULT_BROKER_PROTOCOL, Constants.DEFAULT_BROKER_HOST, Constants.DEFAULT_BROKER_PORT);
 
         brokerManager = new BrokerManager("testBroker");
         brokerManager.executeAndWaitForReady();
@@ -45,7 +45,7 @@ class ManagedClassLauncherTest {
         assertEquals(ReadyFrame.CODE, frame.getCode());
         assertTrue(classLauncher.isRunning());
 
-        MessageUtils.sendMessageToTopic(Constants.ADMIN_TOPIC, new StopFrame());
+        MessageUtils.sendMessageToQueue(classLauncher.getName(), new StopFrame());
         final Frame closingFrame = MessageUtils.waitForMessage(classLauncher.getName(), ClosingFrame.CODE);
         assertEquals(ClosingFrame.CODE, closingFrame.getCode());
     }
@@ -61,7 +61,7 @@ class ManagedClassLauncherTest {
         Thread.sleep(500);
         assertTrue(classLauncher.isRunning());
 
-        MessageUtils.sendMessageToTopic(Constants.ADMIN_TOPIC, new StopFrame());
+        MessageUtils.sendMessageToTopic(Constants.TOPIC_ADMIN, new StopFrame());
         final Frame closingFrame = MessageUtils.waitForMessage(classLauncher.getName(), ClosingFrame.CODE);
         assertEquals(ClosingFrame.CODE, closingFrame.getCode());
     }
