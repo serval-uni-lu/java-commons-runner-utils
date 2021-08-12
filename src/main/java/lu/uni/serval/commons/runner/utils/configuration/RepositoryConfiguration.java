@@ -26,7 +26,6 @@ import lu.uni.serval.commons.git.utils.Frequency;
 
 import java.time.Instant;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Set;
 
 public class RepositoryConfiguration extends Configuration{

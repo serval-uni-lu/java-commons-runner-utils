@@ -45,8 +45,11 @@ public class FileLogger extends Listener {
     protected void onStartListening() {
         try {
             if(output != null){
-                if(output.exists()){
-                    output.delete();
+                if(output.exists() && !output.delete()){
+                    throw new IOException(String.format(
+                            "Failed to deleted already existing file: %s",
+                            output.getAbsolutePath()
+                    ));
                 }
 
                 writer = new BufferedWriter(new FileWriter(output));

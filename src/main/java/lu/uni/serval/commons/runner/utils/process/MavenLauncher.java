@@ -35,7 +35,6 @@ public class MavenLauncher extends JavaLauncher {
     private final Entries mavenOptions = new Entries();
     private final List<String> profiles = new ArrayList<>();
     private List<String> goals = Collections.emptyList();
-    private File logFile = null;
 
     public MavenLauncher() {
         super("Maven Build");
@@ -92,10 +91,8 @@ public class MavenLauncher extends JavaLauncher {
     }
 
     public MavenLauncher writeOutputTo(File logFile) {
-        this.logFile = logFile;
-
-        if(this.logFile != null){
-            addListener(new FileLogger(this.logFile, true));
+        if(logFile != null){
+            addListener(new FileLogger(logFile, true));
         }
 
         return this;

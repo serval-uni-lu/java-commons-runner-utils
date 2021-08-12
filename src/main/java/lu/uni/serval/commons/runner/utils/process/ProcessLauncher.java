@@ -38,9 +38,9 @@ public abstract class ProcessLauncher {
     protected final ProcessLogger processLogger;
     private final Entries environmentVariables = new Entries();
     private Process process;
-    private Set<Listener> listeners = new HashSet<>();
+    private final Set<Listener> listeners = new HashSet<>();
 
-    public ProcessLauncher(String name) {
+    protected ProcessLauncher(String name) {
         processLogger = new ProcessLogger(name);
         addListener(processLogger);
     }

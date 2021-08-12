@@ -51,10 +51,10 @@ public abstract class Listener extends Thread{
         }
     }
 
-    abstract protected void onStartListening();
-    abstract protected boolean onMessageReceived(String string);
-    abstract protected void onEndListening();
-    abstract protected void onExceptionRaised(Exception e);
+    protected abstract void onStartListening();
+    protected abstract boolean onMessageReceived(String string);
+    protected abstract void onEndListening();
+    protected abstract void onExceptionRaised(Exception e);
 
     public static class Message{
         private final String payload;

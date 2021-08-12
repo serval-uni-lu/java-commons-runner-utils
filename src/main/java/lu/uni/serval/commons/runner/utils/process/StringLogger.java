@@ -40,7 +40,9 @@ public class StringLogger extends Listener {
     }
 
     @Override
-    protected void onEndListening() { }
+    protected void onEndListening() {
+        //nothing to do
+    }
 
     @Override
     protected void onExceptionRaised(Exception e) {

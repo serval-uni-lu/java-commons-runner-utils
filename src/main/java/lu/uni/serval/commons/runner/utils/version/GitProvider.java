@@ -29,7 +29,6 @@ import lu.uni.serval.commons.git.utils.LocalRepository;
 import lu.uni.serval.commons.runner.utils.configuration.GitConfiguration;
 import lu.uni.serval.commons.runner.utils.configuration.RepositoryConfiguration;
 import lu.uni.serval.commons.runner.utils.os.OsUtils;
-import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -57,10 +56,9 @@ public class GitProvider implements VersionProvider {
     @Override
     public void clean() throws IOException {
         for(LocalRepository localRepository: repositories){
-            if(localRepository == null) continue;
-            if(localRepository.getGit() == null) continue;
-
-            GitUtils.close(localRepository.getGit(), true);
+            if(localRepository != null && localRepository.getGit() != null){
+                GitUtils.close(localRepository.getGit(), true);
+            }
         }
     }
 
