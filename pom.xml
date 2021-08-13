@@ -110,14 +110,24 @@
                 <version>2.0.0</version>
                 <configuration>
                     <verbose>false</verbose>
-                    <organizationName>University of Luxembourg, Renaud RWEMALIKA</organizationName>
+                    <organizationName>University of Luxembourg</organizationName>
                     <inceptionYear>2021</inceptionYear>
                     <projectName>Runner Utils</projectName>
-                    <licenseName>apache_v2</licenseName>
+                    <licenseName>apache2</licenseName>
+                    <licenseResolver>${project.baseUri}/src/license</licenseResolver>
                     <excludes>
-                        <exclude>*.json</exclude>
+                        <exclude>**/*.json</exclude>
                     </excludes>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>license-check</id>
+                        <goals>
+                            <goal>check-file-header</goal>
+                        </goals>
+                        <phase>process-sources</phase>
+                    </execution>
+                </executions>
             </plugin>
 
             <plugin>
