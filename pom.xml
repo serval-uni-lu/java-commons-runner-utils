@@ -117,6 +117,7 @@
                     <licenseResolver>${project.baseUri}/src/license</licenseResolver>
                     <excludes>
                         <exclude>**/*.json</exclude>
+                        <exclude>**/*.properties</exclude>
                     </excludes>
                 </configuration>
                 <executions>
