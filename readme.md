@@ -24,7 +24,7 @@ Runner Utils is a library to execute and coordinate processes from within the JV
 ```xml
 <dependency>
   <groupId>lu.uni.serval</groupId>
-  <artifactId>commons-exec</artifactId>
+  <artifactId>commons-runner-utils</artifactId>
   <version>0.1.4</version>
 </dependency>
 ```
