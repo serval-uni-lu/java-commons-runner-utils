@@ -22,6 +22,7 @@ package lu.uni.serval.commons.runner.utils.messaging.activemq.broker;
 
 
 import lu.uni.serval.commons.runner.utils.exception.NotInitializedException;
+import lu.uni.serval.commons.runner.utils.messaging.activemq.Constants;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.Observer;
 import lu.uni.serval.commons.runner.utils.messaging.frame.AddressFrame;
 import lu.uni.serval.commons.runner.utils.messaging.frame.EndFrame;
@@ -111,7 +112,7 @@ public class BrokerManager implements Closeable, Runnable, FrameProcessorFactory
     public void close(){
         try {
             if(launcher.isRunning()){
-                Sender.sendFrame(remotePort, new StopFrame());
+                Sender.sendFrame(Constants.LOCALHOST, remotePort, new StopFrame());
             }
         } catch (IOException e) {
             logger.printf(

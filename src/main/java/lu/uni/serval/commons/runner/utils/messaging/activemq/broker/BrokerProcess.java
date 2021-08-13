@@ -21,6 +21,7 @@ package lu.uni.serval.commons.runner.utils.messaging.activemq.broker;
  */
 
 
+import lu.uni.serval.commons.runner.utils.messaging.activemq.Constants;
 import lu.uni.serval.commons.runner.utils.messaging.frame.AddressFrame;
 import lu.uni.serval.commons.runner.utils.messaging.frame.EndFrame;
 import lu.uni.serval.commons.runner.utils.messaging.frame.ExceptionFrame;
@@ -75,11 +76,11 @@ public class BrokerProcess implements Runnable, Closeable, FrameProcessorFactory
                 broker.waitUntilStopped();
             }
 
-            Sender.sendFrame(remotePort, new EndFrame("close"));
+            Sender.sendFrame(Constants.LOCALHOST, remotePort, new EndFrame("close"));
         } catch (Exception e) {
             if(remotePort != -1){
                 try {
-                    Sender.sendFrame(remotePort, new ExceptionFrame(e));
+                    Sender.sendFrame(Constants.LOCALHOST, remotePort, new ExceptionFrame(e));
                 } catch (Exception ignore) {
                     //ignore
                 }
@@ -101,7 +102,7 @@ public class BrokerProcess implements Runnable, Closeable, FrameProcessorFactory
         this.service.waitUntilStarted();
         new Thread(this).start();
 
-        Sender.sendFrame(remotePort, new ReadyBrokerFrame());
+        Sender.sendFrame(Constants.LOCALHOST, remotePort, new ReadyBrokerFrame());
     }
 
     private void waitUntilStarted() {
@@ -135,11 +136,11 @@ public class BrokerProcess implements Runnable, Closeable, FrameProcessorFactory
     public void run() {
         try {
             logger.info("Start management listening...");
-            Sender.sendFrame(remotePort, new AddressFrame(managementSocket.getLocalPort()));
+            Sender.sendFrame(Constants.LOCALHOST, remotePort, new AddressFrame(managementSocket.getLocalPort()));
             Listener.listen(managementSocket, this);
         } catch (Exception e) {
             try {
-                Sender.sendFrame(remotePort, new ExceptionFrame(e));
+                Sender.sendFrame(Constants.LOCALHOST, remotePort, new ExceptionFrame(e));
             } catch (IOException ignore) {
                 //ignore
             }

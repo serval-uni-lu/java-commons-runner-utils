@@ -61,7 +61,7 @@ public class Listener {
         }
     }
 
-    private static boolean processMessage(InputStream inputStream, FrameProcessorFactory frameProcessorFactory){
+    public static boolean processMessage(InputStream inputStream, FrameProcessorFactory frameProcessorFactory){
         boolean isContinue = true;
 
         try(ObjectInputStream in = new ObjectInputStream(inputStream)){

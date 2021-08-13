@@ -30,11 +30,7 @@ import java.net.Socket;
 public class Sender {
     private Sender() {}
 
-    public static void sendFrame(int port, Frame frame) throws IOException {
-        sendFrame("localhost", port, frame);
-    }
-
-    private static void sendFrame(String host, int port, Frame frame) throws IOException {
+    public static void sendFrame(String host, int port, Frame frame) throws IOException {
         try (Socket socket = new Socket(host, port)) {
             sendFrame(socket, frame);
         }

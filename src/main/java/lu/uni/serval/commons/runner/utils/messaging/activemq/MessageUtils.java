@@ -89,7 +89,7 @@ public class MessageUtils {
         try{
             session = connection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
             producer = session.createProducer(destination);
-            producer.send(session.createObjectMessage(frame));
+            producer.send(toMessage(frame, session));
         }
         finally {
             if(producer != null){
@@ -113,14 +113,10 @@ public class MessageUtils {
 
         while (frame == null){
             try{
-                final Message message = consumer.receive();
+                final Frame candidate = fromMessage(consumer.receive());
 
-                if (message instanceof ObjectMessage) {
-                    final Frame candidate = (Frame) ((ObjectMessage)message).getObject();
-
-                    if(candidate.getCode() == code){
-                        frame = candidate;
-                    }
+                if(candidate.getCode() == code){
+                    frame = candidate;
                 }
             }
             catch (Exception ignore) {
@@ -132,5 +128,30 @@ public class MessageUtils {
         topicConnection.close();
 
         return frame;
+    }
+
+    public static Frame fromMessage(final Message message) throws JMSException {
+        if (message instanceof ObjectMessage) {
+            final Object object = ((ObjectMessage)message).getObject();
+
+            if(Frame.class.isAssignableFrom(object.getClass())){
+                return (Frame)object;
+            }
+            else {
+                throw new JMSException(String.format(
+                        "Excepted object implementing Frame, but got %s instead.",
+                        object.getClass().getSimpleName())
+                );
+            }
+        }
+
+        throw new JMSException(String.format(
+                "Excepted message of type ObjectMessage, but got %s instead.",
+                message.getClass().getSimpleName())
+        );
+    }
+
+    public static Message toMessage(final Frame frame, final Session session) throws JMSException {
+        return session.createObjectMessage(frame);
     }
 }

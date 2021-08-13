@@ -32,20 +32,8 @@ import java.util.Collections;
 import java.util.Set;
 
 public class InfiniteLaunchableClass extends ManagedProcess {
-    private final static Logger logger = LogManager.getLogger(InfiniteLaunchableClass.class);
-
     public static void main(String[] args) {
-        try {
-            new InfiniteLaunchableClass().doMain(args);
-        } catch (Exception e) {
-            logger.printf(Level.ERROR,
-                    "Process terminated with error: [%s] %s",
-                    e.getClass().getSimpleName(),
-                    e.getMessage()
-            );
-
-            System.exit(-1);
-        }
+        new InfiniteLaunchableClass().doMain(args);
     }
 
     @Override
@@ -54,9 +42,19 @@ public class InfiniteLaunchableClass extends ManagedProcess {
     }
 
     @Override
-    protected void doWork(CommandLine cmd) throws Exception {
-        while (isWorking()){
-            Thread.sleep(100);
+    protected void doWork(CommandLine cmd) {
+        try{
+            while (isWorking()){
+                Thread.sleep(100);
+            }
         }
+        catch (Exception e){
+            registerException(e);
+        }
+    }
+
+    @Override
+    protected void onBeforeClose() {
+        //nothing to do
     }
 }

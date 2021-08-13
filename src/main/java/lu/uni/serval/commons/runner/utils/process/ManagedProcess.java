@@ -48,20 +48,38 @@ public abstract class ManagedProcess implements Closeable, ExceptionListener, Me
     private QueueConnection queueConnection;
     private QueueSession queueSession;
 
+    private Exception registeredException = null;
+
     private volatile boolean working = false;
 
-    protected final void doMain(String[] args) throws Exception {
-        final CommandLine cmd = processArguments(args);
-
-        connectBroker(cmd);
-        working = true;
-
+    protected final void doMain(String[] args) {
         try {
+            final CommandLine cmd = processArguments(args);
+
+            connectBroker(cmd);
+            working = true;
             MessageUtils.sendMessageToTopic(topicConnection, name, new ReadyFrame());
             doWork(cmd);
         }
+        catch (Exception e){
+            logger.printf(Level.ERROR,
+                    "Failed to start managed process: [%s] %s",
+                    e.getClass().getSimpleName(),
+                    e.getMessage()
+            );
+        }
         finally {
             close();
+
+            if(registeredException != null){
+                logger.printf(Level.ERROR,
+                        "Process terminated with error: [%s] %s",
+                        registeredException.getClass().getSimpleName(),
+                        registeredException.getMessage()
+                );
+
+                System.exit(-1);
+            }
         }
     }
 
@@ -105,19 +123,33 @@ public abstract class ManagedProcess implements Closeable, ExceptionListener, Me
         return working;
     }
 
+    protected void registerException(Exception exception){
+        this.registeredException = exception;
+    }
+
+    protected void sendMessageToTopic(String topicName, Frame frame) throws JMSException {
+        MessageUtils.sendMessageToTopic(topicConnection, topicName, frame);
+    }
+
+    protected void sendMessageToQueue(String queueName, Frame frame) throws JMSException {
+        MessageUtils.sendMessageToQueue(queueConnection, queueName, frame);
+    }
+
     @Override
-    public void close() throws JMSException {
+    public void close() {
+        onBeforeClose();
+
         working = false;
 
-        queueSession.close();
-        queueConnection.close();
-
-        topicSession.close();
-        topicConnection.close();
-
         try {
+            queueSession.close();
+            queueConnection.close();
+
+            topicSession.close();
+            topicConnection.close();
+
             MessageUtils.sendMessageToTopic(name, new ClosingFrame());
-        } catch (NotInitializedException e) {
+        } catch (Exception e) {
             logger.printf(Level.ERROR,
                     "Failed to send closing frame for %s: [%s] %s",
                     this.getClass().getName(),
@@ -164,5 +196,6 @@ public abstract class ManagedProcess implements Closeable, ExceptionListener, Me
     }
 
     protected abstract Set<Option> getOptions();
-    protected abstract void doWork(CommandLine cmd) throws Exception;
+    protected abstract void doWork(CommandLine cmd);
+    protected abstract void onBeforeClose();
 }
