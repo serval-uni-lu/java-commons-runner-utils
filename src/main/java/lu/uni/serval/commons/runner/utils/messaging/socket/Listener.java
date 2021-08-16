@@ -64,7 +64,7 @@ public class Listener {
     public static boolean processMessage(InputStream inputStream, FrameProcessorFactory frameProcessorFactory){
         boolean isContinue = true;
 
-        try(ObjectInputStream in = new ObjectInputStream(inputStream)){
+        try(ObjectInputStream in = new FrameInputStream(inputStream, frameProcessorFactory.getAllowedClasses())){
             final Frame frame = (Frame) in.readObject();
             isContinue = frameProcessorFactory.getFrameProcessor(frame.getCode()).process(frame);
         }

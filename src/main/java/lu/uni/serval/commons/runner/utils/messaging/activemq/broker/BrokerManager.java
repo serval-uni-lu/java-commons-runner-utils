@@ -24,10 +24,7 @@ package lu.uni.serval.commons.runner.utils.messaging.activemq.broker;
 import lu.uni.serval.commons.runner.utils.exception.NotInitializedException;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.Constants;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.Observer;
-import lu.uni.serval.commons.runner.utils.messaging.frame.AddressFrame;
-import lu.uni.serval.commons.runner.utils.messaging.frame.EndFrame;
-import lu.uni.serval.commons.runner.utils.messaging.frame.ExceptionFrame;
-import lu.uni.serval.commons.runner.utils.messaging.frame.StopFrame;
+import lu.uni.serval.commons.runner.utils.messaging.frame.*;
 import lu.uni.serval.commons.runner.utils.messaging.socket.Sender;
 import lu.uni.serval.commons.runner.utils.messaging.socket.Listener;
 import lu.uni.serval.commons.runner.utils.messaging.socket.processor.FrameProcessor;
@@ -174,6 +171,18 @@ public class BrokerManager implements Closeable, Runnable, FrameProcessorFactory
         };
 
         throw new IllegalArgumentException(String.format("Frame of code %s not supported", code));
+    }
+
+    @Override
+    public Set<Class<? extends Frame>> getAllowedClasses() {
+        final Set<Class<? extends Frame>> allowedClasses = new HashSet<>(4);
+
+        allowedClasses.add(AddressFrame.class);
+        allowedClasses.add(EndFrame.class);
+        allowedClasses.add(ExceptionFrame.class);
+        allowedClasses.add(ReadyBrokerFrame.class);
+
+        return allowedClasses;
     }
 
     private void closeManagementSocket(){

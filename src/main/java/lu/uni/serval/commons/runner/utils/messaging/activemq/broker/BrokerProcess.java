@@ -22,10 +22,7 @@ package lu.uni.serval.commons.runner.utils.messaging.activemq.broker;
 
 
 import lu.uni.serval.commons.runner.utils.messaging.activemq.Constants;
-import lu.uni.serval.commons.runner.utils.messaging.frame.AddressFrame;
-import lu.uni.serval.commons.runner.utils.messaging.frame.EndFrame;
-import lu.uni.serval.commons.runner.utils.messaging.frame.ExceptionFrame;
-import lu.uni.serval.commons.runner.utils.messaging.frame.StopFrame;
+import lu.uni.serval.commons.runner.utils.messaging.frame.*;
 import lu.uni.serval.commons.runner.utils.messaging.socket.Sender;
 import lu.uni.serval.commons.runner.utils.messaging.socket.Listener;
 import lu.uni.serval.commons.runner.utils.messaging.socket.processor.FrameProcessor;
@@ -41,6 +38,8 @@ import org.apache.logging.log4j.Logger;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.URI;
+import java.util.Collections;
+import java.util.Set;
 
 public class BrokerProcess implements Runnable, Closeable, FrameProcessorFactory {
     private static final Logger logger = LogManager.getLogger(BrokerProcess.class);
@@ -173,5 +172,10 @@ public class BrokerProcess implements Runnable, Closeable, FrameProcessorFactory
         if(StopFrame.CODE == code) return frame -> false;
 
         throw new IllegalArgumentException(String.format("Frame of type %s not supported", code));
+    }
+
+    @Override
+    public Set<Class<? extends Frame>> getAllowedClasses() {
+        return Collections.singleton(StopFrame.class);
     }
 }
