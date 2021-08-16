@@ -36,10 +36,12 @@ public abstract class Listener extends Thread{
         try {
             onStartListening();
 
+            boolean isContinue = true;
             Message message;
-            while (true) {
+
+            while (isContinue) {
                 message = queue.take();
-                if(message.isEmpty() || !onMessageReceived(message.get())) break;
+                isContinue = !message.isEmpty() && onMessageReceived(message.get());
             }
 
             onEndListening();
