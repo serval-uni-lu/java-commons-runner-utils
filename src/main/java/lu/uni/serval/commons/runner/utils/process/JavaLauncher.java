@@ -25,11 +25,17 @@ import lu.uni.serval.commons.runner.utils.configuration.Entries;
 import lu.uni.serval.commons.runner.utils.configuration.Entry;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 public abstract class JavaLauncher extends ProcessLauncher {
     private File javaHome;
     private final Entries javaParameters = new Entries();
+    private final Entries shortNameParameters = new Entries();
+    private final Entries longNameParameters = new Entries();
+    private final List<String> freeParameters = new ArrayList<>();
 
     protected JavaLauncher(String name) {
         super(name);
@@ -44,11 +50,30 @@ public abstract class JavaLauncher extends ProcessLauncher {
     }
 
     protected void addJavaParameters(Entries entries){
-        javaParameters.putAll(entries);
+        javaParameters.addAll(entries);
     }
 
-    protected Entries getJavaParameters(){
-        return javaParameters;
+    protected void addShortNameParameter(Entry entry){
+        shortNameParameters.add(entry);
+    }
+
+    protected void addLongNameParameter(Entry entry){
+        longNameParameters.add(entry);
+    }
+
+    protected void addFreeParameter(String parameter){
+        freeParameters.add(parameter);
+    }
+
+    protected List<String> getParameters(){
+        final List<String> parameters = new LinkedList<>();
+
+        parameters.addAll(freeParameters);
+        parameters.addAll(javaParameters.format("-D", "="));
+        parameters.addAll(shortNameParameters.format("-", " "));
+        parameters.addAll(longNameParameters.format("--", " "));
+
+        return parameters;
     }
 
     @Override

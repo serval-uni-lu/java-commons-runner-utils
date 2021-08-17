@@ -56,9 +56,9 @@ public class BrokerProcess implements Runnable, Closeable, FrameProcessorFactory
             final Options options = new Options();
             final CommandLineParser parser = new DefaultParser();
 
-            options.addOption("management", true, "Management port number");
-            options.addOption("name", true, "Name of the broker");
-            options.addOption("brokerUrl", true, "URL for the broker process");
+            options.addOption("m", "management", true, "Management port number");
+            options.addOption("n", "name", true, "Name of the broker");
+            options.addOption("b", "brokerUrl", true, "URL for the broker process");
 
             final CommandLine cmd = parser.parse(options, args);
 

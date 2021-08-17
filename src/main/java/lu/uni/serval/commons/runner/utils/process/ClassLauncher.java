@@ -21,14 +21,12 @@ package lu.uni.serval.commons.runner.utils.process;
  */
 
 
-import lu.uni.serval.commons.runner.utils.configuration.Entries;
 import lu.uni.serval.commons.runner.utils.configuration.Entry;
 
 import java.util.*;
 
 public class ClassLauncher extends JavaLauncher {
     private final Class<?> classLaunched;
-    private final List<String> freeParameters = new ArrayList<>();
 
     public ClassLauncher(final Class<?> classLaunched) {
         super(classLaunched.getName());
@@ -40,13 +38,18 @@ public class ClassLauncher extends JavaLauncher {
         return this;
     }
 
-    public ClassLauncher withJavaParameters(Entries extraParameters){
-        addJavaParameters(extraParameters);
+    public ClassLauncher withFreeParameter(String freeParameter){
+        addFreeParameter(freeParameter);
         return this;
     }
 
-    public ClassLauncher withFreeParameter(String freeParameter){
-        freeParameters.add(freeParameter);
+    public ClassLauncher withShortNameParameter(String name, String value){
+        addShortNameParameter(new Entry(name, value));
+        return this;
+    }
+
+    public ClassLauncher withLongNameParameter(String name, String value){
+        addLongNameParameter(new Entry(name, value));
         return this;
     }
 
@@ -59,7 +62,7 @@ public class ClassLauncher extends JavaLauncher {
         command.add(System.getProperty("java.class.path"));
         command.add(this.classLaunched.getName());
 
-        command.addAll(freeParameters);
+        command.addAll(getParameters());
 
         return command;
     }

@@ -21,7 +21,6 @@ package lu.uni.serval.commons.runner.utils.process;
  */
 
 
-import lu.uni.serval.commons.runner.utils.configuration.Entries;
 import lu.uni.serval.commons.runner.utils.configuration.Entry;
 import org.apache.commons.io.FilenameUtils;
 
@@ -30,7 +29,6 @@ import java.util.*;
 
 public class JarLauncher extends JavaLauncher {
     private final File jar;
-    private final List<String> freeParameters = new ArrayList<>();
 
     public JarLauncher(final File jar) {
         super(jar.getName());
@@ -44,13 +42,8 @@ public class JarLauncher extends JavaLauncher {
         return this;
     }
 
-    public JarLauncher withJavaParameters(Entries extraParameters){
-        addJavaParameters(extraParameters);
-        return this;
-    }
-
     public JarLauncher withFreeParameter(String freeParameter){
-        freeParameters.add(freeParameter);
+        addFreeParameter(freeParameter);
         return this;
     }
 
@@ -63,11 +56,7 @@ public class JarLauncher extends JavaLauncher {
 
         command.add(new Entry(getJarName()).format(""));
 
-        for(Entry entry: super.getJavaParameters()){
-            command.add(entry.format("-D", "="));
-        }
-
-        command.addAll(freeParameters);
+        command.addAll(getParameters());
 
         return command;
     }

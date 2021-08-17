@@ -119,6 +119,10 @@ public abstract class ManagedProcess implements Closeable, ExceptionListener, Me
         topicConsumer.setMessageListener(this);
     }
 
+    public String getName(){
+        return this.name;
+    }
+
     protected boolean isWorking(){
         return working;
     }

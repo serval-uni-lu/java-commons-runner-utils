@@ -34,6 +34,25 @@ public class Entries implements Collection<Entry> {
         entryList = new ArrayList<>(size);
     }
 
+    public List<String> format(String separator){
+        return format("", separator, "");
+    }
+
+    public List<String> format(String prefix, String separator){
+        return format(prefix, separator, "");
+    }
+
+    public List<String> format(String prefix, String separator, String suffix){
+        final List<String> formatted = new LinkedList<>();
+
+        for(Entry entry: entryList){
+            final String formattedEntry = entry.format(prefix, separator, suffix);
+            formatted.addAll(Arrays.asList(formattedEntry.split("\\s+")));
+        }
+
+        return formatted;
+    }
+
     public void put(String key, String value){
         entryList.add(new Entry(key, value));
     }

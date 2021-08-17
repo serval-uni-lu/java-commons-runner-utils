@@ -61,16 +61,10 @@ public class BrokerManager implements Closeable, Runnable, FrameProcessorFactory
         this.stopRunnables = new HashSet<>();
         this.exceptionConsumers = new HashSet<>();
         this.serverSocket = new ServerSocket(0);
-        this.launcher = new ClassLauncher(BrokerProcess.class);
-
-        launcher.withFreeParameter("-management");
-        launcher.withFreeParameter(String.valueOf(serverSocket.getLocalPort()));
-
-        launcher.withFreeParameter("-name");
-        launcher.withFreeParameter(this.name);
-
-        launcher.withFreeParameter("-brokerUrl");
-        launcher.withFreeParameter(BrokerInfo.url());
+        this.launcher = new ClassLauncher(BrokerProcess.class)
+                .withLongNameParameter("management", String.valueOf(serverSocket.getLocalPort()))
+                .withLongNameParameter("name", this.name)
+                .withLongNameParameter("brokerUrl", BrokerInfo.url());
     }
 
     public String getName() {

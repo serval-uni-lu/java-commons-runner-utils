@@ -130,9 +130,7 @@ public class MavenLauncher extends JavaLauncher {
         command.add("--batch-mode");
         command.addAll(goals);
 
-        for(Entry entry: super.getJavaParameters()){
-            command.add(entry.format("-D", "="));
-        }
+        command.addAll(getParameters());
 
         if(!profiles.isEmpty()){
             command.add("-P");
