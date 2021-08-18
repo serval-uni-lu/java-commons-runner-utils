@@ -29,6 +29,7 @@ import lu.uni.serval.commons.runner.utils.messaging.activemq.broker.BrokerInfo;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.broker.BrokerUtils;
 import lu.uni.serval.commons.runner.utils.messaging.frame.*;
 import org.apache.activemq.Closeable;
+import org.apache.activemq.ConnectionFailedException;
 import org.apache.commons.cli.*;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -81,6 +82,8 @@ public abstract class ManagedProcess implements Closeable, ExceptionListener, Me
                 System.exit(-1);
             }
         }
+
+        System.exit(0);
     }
 
     private CommandLine processArguments(String[] args) throws ParseException {
@@ -127,6 +130,10 @@ public abstract class ManagedProcess implements Closeable, ExceptionListener, Me
         return working;
     }
 
+    protected void setWorking(boolean isWorking){
+        working = isWorking;
+    }
+
     protected void registerException(Exception exception){
         this.registeredException = exception;
     }
@@ -141,30 +148,56 @@ public abstract class ManagedProcess implements Closeable, ExceptionListener, Me
 
     @Override
     public void close() {
-        onBeforeClose();
+        logger.printf(Level.INFO, "Closing process %s...", getName());
 
         working = false;
 
         try {
+            queueConnection.stop();
             queueSession.close();
             queueConnection.close();
 
+            topicConnection.stop();
             topicSession.close();
             topicConnection.close();
 
             MessageUtils.sendMessageToTopic(name, new ClosingFrame());
-        } catch (Exception e) {
+        }
+        catch (ConnectionFailedException e){
+            if(e.getMessage().contains("java.io.EOFException")){
+                logger.printf(Level.INFO,
+                        "Not sending Closing Frame for process %s because the connection has been terminated",
+                        getName()
+                );
+            }
+            else{
+                logger.printf(Level.ERROR,
+                        "Failed to send closing frame for %s: [%s] %s",
+                        getName(),
+                        e.getClass().getSimpleName(),
+                        e.getMessage()
+                );
+            }
+        }
+        catch (Exception e) {
             logger.printf(Level.ERROR,
-                    "Failed to send closing frame for %s: [%s] %s",
-                    this.getClass().getName(),
+                    "Failed to properly close process %s: [%s] %s",
+                    getName(),
                     e.getClass().getSimpleName(),
                     e.getMessage()
             );
         }
+
+        logger.printf(Level.INFO, "Process %s is closing", getName());
     }
 
     @Override
     public void onException(JMSException exception) {
+        if(exception.getMessage().equals("java.io.EOFException")){
+            logger.info("Lost connection to broker: Closing process");
+            stop();
+        }
+
         logger.printf(Level.ERROR,
                 "JMS exception raised while processing: [%s] %s",
                 exception.getClass().getSimpleName(),
@@ -178,8 +211,8 @@ public abstract class ManagedProcess implements Closeable, ExceptionListener, Me
             if(message instanceof ObjectMessage){
                 final Frame frame = (Frame)((ObjectMessage)message).getObject();
                 if(frame.getCode() == StopFrame.CODE){
-                    logger.info("Received Stop Message");
-                    working = false;
+                    logger.info("Received Stop Message: Closing process");
+                    stop();
                 }
             }
         } catch (JMSException e) {
@@ -201,5 +234,5 @@ public abstract class ManagedProcess implements Closeable, ExceptionListener, Me
 
     protected abstract Set<Option> getOptions();
     protected abstract void doWork(CommandLine cmd);
-    protected abstract void onBeforeClose();
+    protected abstract void stop();
 }

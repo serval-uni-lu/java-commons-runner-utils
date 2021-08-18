@@ -23,7 +23,8 @@ package lu.uni.serval.commons.runner.utils.process;
 
 import lu.uni.serval.commons.runner.utils.exception.AlreadyInitializedException;
 import lu.uni.serval.commons.runner.utils.exception.NotInitializedException;
-import lu.uni.serval.commons.runner.utils.helpers.InfiniteLaunchableClass;
+import lu.uni.serval.commons.runner.utils.exception.NotStartedException;
+import lu.uni.serval.commons.runner.utils.helpers.TestManagedClass;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.Constants;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.MessageUtils;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.broker.BrokerInfo;
@@ -45,7 +46,7 @@ class ManagedClassLauncherTest {
     private static BrokerManager brokerManager;
 
     @BeforeAll
-    static void startBroker() throws IOException, InterruptedException, AlreadyInitializedException, NotInitializedException {
+    static void startBroker() throws IOException, InterruptedException, AlreadyInitializedException, NotInitializedException, NotStartedException {
         BrokerInfo.initialize(Constants.DEFAULT_BROKER_PROTOCOL, Constants.DEFAULT_BROKER_HOST, Constants.DEFAULT_BROKER_PORT);
 
         brokerManager = new BrokerManager("testBroker");
@@ -59,7 +60,7 @@ class ManagedClassLauncherTest {
 
     @Test
     void stopProcessUsingQueue() throws IOException, InterruptedException, JMSException, NotInitializedException {
-        final ManagedClassLauncher classLauncher = new ManagedClassLauncher(InfiniteLaunchableClass.class);
+        final ManagedClassLauncher classLauncher = new ManagedClassLauncher(TestManagedClass.class);
         classLauncher.execute(false);
 
         final Frame frame = MessageUtils.waitForMessage(classLauncher.getName(), ReadyFrame.CODE);
@@ -73,7 +74,7 @@ class ManagedClassLauncherTest {
 
     @Test
     void stopProcessUsingAdminTopic() throws IOException, InterruptedException, JMSException, NotInitializedException {
-        final ManagedClassLauncher classLauncher = new ManagedClassLauncher(InfiniteLaunchableClass.class);
+        final ManagedClassLauncher classLauncher = new ManagedClassLauncher(TestManagedClass.class);
         classLauncher.execute(false);
 
         final Frame readyFrame = MessageUtils.waitForMessage(classLauncher.getName(), ReadyFrame.CODE);
@@ -89,7 +90,7 @@ class ManagedClassLauncherTest {
 
     @Test
     void forciblyKillProcess() throws IOException, InterruptedException, JMSException, NotInitializedException {
-        final ManagedClassLauncher classLauncher = new ManagedClassLauncher(InfiniteLaunchableClass.class);
+        final ManagedClassLauncher classLauncher = new ManagedClassLauncher(TestManagedClass.class);
         classLauncher.execute(false);
 
         final Frame readyFrame = MessageUtils.waitForMessage(classLauncher.getName(), ReadyFrame.CODE);

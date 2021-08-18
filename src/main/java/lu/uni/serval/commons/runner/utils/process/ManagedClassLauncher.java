@@ -37,7 +37,7 @@ public class ManagedClassLauncher extends JavaLauncher {
         super(classLaunched.getName());
 
         this.classLaunched = classLaunched;
-        this.name = String.format("%s.%d", classLaunched.getSimpleName().toLowerCase(),  System.currentTimeMillis());
+        this.name = String.format("%s.%d", classLaunched.getSimpleName().toUpperCase(),  System.currentTimeMillis());
         this.brokerUrl = BrokerInfo.url();
     }
 

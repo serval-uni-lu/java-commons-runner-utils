@@ -24,16 +24,15 @@ package lu.uni.serval.commons.runner.utils.helpers;
 import lu.uni.serval.commons.runner.utils.process.ManagedProcess;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Collections;
 import java.util.Set;
 
-public class InfiniteLaunchableClass extends ManagedProcess {
+public class TestManagedClass extends ManagedProcess {
     public static void main(String[] args) {
-        new InfiniteLaunchableClass().doMain(args);
+        new TestManagedClass().doMain(args);
     }
 
     @Override
@@ -54,7 +53,7 @@ public class InfiniteLaunchableClass extends ManagedProcess {
     }
 
     @Override
-    protected void onBeforeClose() {
-        //nothing to do
+    protected void stop() {
+        setWorking(false);
     }
 }

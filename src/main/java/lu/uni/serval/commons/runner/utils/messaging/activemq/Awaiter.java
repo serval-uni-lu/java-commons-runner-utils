@@ -24,9 +24,10 @@ package lu.uni.serval.commons.runner.utils.messaging.activemq;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-public class Observer {
+public class Awaiter {
     private final Set<Consumer<Runnable>> runnables = new HashSet<>();
     private final Set<Consumer<Consumer>> consumers = new HashSet<>();
 
@@ -38,12 +39,12 @@ public class Observer {
         consumers.add(callback);
     }
 
-    public void waitOnMessages() throws InterruptedException {
+    public boolean waitOnMessages(int timeout, TimeUnit timeUnit) throws InterruptedException {
         final CountDownLatch countDownLatch = new CountDownLatch(1);
 
         runnables.forEach(m -> m.accept(countDownLatch::countDown));
         consumers.forEach(m -> m.accept(e -> countDownLatch.countDown()));
 
-        countDownLatch.await();
+        return countDownLatch.await(timeout, timeUnit);
     }
 }

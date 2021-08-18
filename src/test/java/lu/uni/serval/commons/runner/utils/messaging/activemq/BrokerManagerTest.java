@@ -23,33 +23,58 @@ package lu.uni.serval.commons.runner.utils.messaging.activemq;
 
 import lu.uni.serval.commons.runner.utils.exception.AlreadyInitializedException;
 import lu.uni.serval.commons.runner.utils.exception.NotInitializedException;
+import lu.uni.serval.commons.runner.utils.exception.NotStartedException;
+import lu.uni.serval.commons.runner.utils.helpers.TestManagedClass;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.broker.BrokerInfo;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.broker.BrokerManager;
+import lu.uni.serval.commons.runner.utils.process.ManagedClassLauncher;
+import org.awaitility.Awaitility;
+import org.awaitility.Duration;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.Socket;
+import java.util.concurrent.TimeUnit;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
 class BrokerManagerTest {
-    @Test
-    void testStartAndStop() throws IOException, InterruptedException, AlreadyInitializedException, NotInitializedException {
+    @BeforeAll
+    static void initializeBrokerInfo() throws AlreadyInitializedException {
         BrokerInfo.initialize(Constants.DEFAULT_BROKER_PROTOCOL, Constants.DEFAULT_BROKER_HOST, Constants.DEFAULT_BROKER_PORT);
-        final BrokerManager brokerManager = new BrokerManager("testBroker");
-        final Observer observer = new Observer();
-        observer.addRunner(brokerManager::onBrokerStopped);
+        Awaitility.setDefaultPollInterval(100, TimeUnit.MILLISECONDS);
+        Awaitility.setDefaultPollDelay(Duration.ZERO);
+        Awaitility.setDefaultTimeout(20, TimeUnit.SECONDS);
+    }
 
+    @BeforeEach
+
+    @Test
+    void testStartAndStop() throws IOException, InterruptedException, NotInitializedException, NotStartedException {
+        final BrokerManager brokerManager = new BrokerManager("testBroker");
         brokerManager.executeAndWaitForReady();
-        assertTrue(brokerManager.isRunning());
-        Thread.sleep(500);
         assertTrue(brokerManager.isRunning());
         brokerManager.close();
 
-        observer.waitOnMessages();
-
-        assertFalse(brokerManager.isRunning());
+        await().until(() -> !brokerManager.isRunning());
         assertThrows(ConnectException.class, () -> new Socket(Constants.DEFAULT_BROKER_HOST, Constants.DEFAULT_BROKER_PORT));
+    }
+
+    @Test
+    void testStopManagedProcesses() throws NotInitializedException, IOException, InterruptedException, NotStartedException {
+        final ManagedClassLauncher launcher = new ManagedClassLauncher(TestManagedClass.class);
+
+        try(final BrokerManager brokerManager = new BrokerManager("testBroker")){
+            brokerManager.executeAndWaitForReady();
+            launcher.execute(false);
+            Thread.sleep(5000);
+            assertTrue(launcher.isRunning());
+        }
+
+        await().until(() -> !launcher.isRunning());
     }
 }

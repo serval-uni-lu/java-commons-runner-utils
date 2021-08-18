@@ -21,6 +21,7 @@ package lu.uni.serval.commons.runner.utils.messaging.socket;
  */
 
 
+import lu.uni.serval.commons.runner.utils.exception.FrameCodeNotSupported;
 import lu.uni.serval.commons.runner.utils.messaging.frame.Frame;
 import lu.uni.serval.commons.runner.utils.messaging.socket.processor.FrameProcessorFactory;
 import org.apache.logging.log4j.Level;
@@ -63,10 +64,12 @@ public class Listener {
 
     public static boolean processMessage(InputStream inputStream, FrameProcessorFactory frameProcessorFactory){
         boolean isContinue = true;
+        Frame frame = null;
 
         try(ObjectInputStream in = new FrameInputStream(inputStream, frameProcessorFactory.getAllowedClasses())){
-            final Frame frame = (Frame) in.readObject();
+            frame = (Frame) in.readObject();
             isContinue = frameProcessorFactory.getFrameProcessor(frame.getCode()).process(frame);
+            frame = null;
         }
         catch (EOFException e){
             logger.error("Closing socket");
@@ -77,6 +80,13 @@ public class Listener {
                     "Failed to process message: [%s] %s%n",
                     e.getClass().getSimpleName(),
                     e.getMessage());
+        }
+        catch (FrameCodeNotSupported e){
+            logger.printf(Level.ERROR,
+                    "[%s] %s not supported",
+                    e.getClass().getSimpleName(),
+                    frame.getClass().getSimpleName()
+            );
         }
 
         return isContinue;

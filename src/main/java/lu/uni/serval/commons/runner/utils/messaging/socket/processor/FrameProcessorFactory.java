@@ -21,12 +21,13 @@ package lu.uni.serval.commons.runner.utils.messaging.socket.processor;
  */
 
 
+import lu.uni.serval.commons.runner.utils.exception.FrameCodeNotSupported;
 import lu.uni.serval.commons.runner.utils.messaging.frame.Frame;
 
 import java.util.Set;
 
 public interface FrameProcessorFactory {
-    FrameProcessor getFrameProcessor(int code);
+    FrameProcessor getFrameProcessor(int code) throws FrameCodeNotSupported;
 
     Set<Class<? extends Frame>> getAllowedClasses();
 }

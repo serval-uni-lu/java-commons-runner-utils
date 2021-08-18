@@ -21,11 +21,13 @@ package lu.uni.serval.commons.runner.utils.messaging.activemq.broker;
  */
 
 
+import lu.uni.serval.commons.runner.utils.exception.FrameCodeNotSupported;
 import lu.uni.serval.commons.runner.utils.exception.NotInitializedException;
+import lu.uni.serval.commons.runner.utils.exception.NotStartedException;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.Constants;
-import lu.uni.serval.commons.runner.utils.messaging.activemq.Observer;
+import lu.uni.serval.commons.runner.utils.messaging.activemq.MessageUtils;
+import lu.uni.serval.commons.runner.utils.messaging.activemq.Awaiter;
 import lu.uni.serval.commons.runner.utils.messaging.frame.*;
-import lu.uni.serval.commons.runner.utils.messaging.socket.Sender;
 import lu.uni.serval.commons.runner.utils.messaging.socket.Listener;
 import lu.uni.serval.commons.runner.utils.messaging.socket.processor.FrameProcessor;
 import lu.uni.serval.commons.runner.utils.messaging.socket.processor.FrameProcessorFactory;
@@ -33,15 +35,20 @@ import lu.uni.serval.commons.runner.utils.process.ClassLauncher;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.awaitility.Duration;
 
+import javax.jms.*;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-public class BrokerManager implements Closeable, Runnable, FrameProcessorFactory {
+import static org.awaitility.Awaitility.await;
+
+public class BrokerManager implements Closeable, Runnable, FrameProcessorFactory, MessageListener, ExceptionListener {
     private static final Logger logger = LogManager.getLogger(BrokerManager.class);
 
     private final String name;
@@ -52,7 +59,8 @@ public class BrokerManager implements Closeable, Runnable, FrameProcessorFactory
     private final Set<Runnable> stopRunnables;
     private final Set<Consumer<Exception>> exceptionConsumers;
 
-    private volatile int remotePort;
+    private TopicConnection topicConnection;
+    private TopicSession topicSession;
 
     public BrokerManager(String name) throws IOException, NotInitializedException {
         this.name = name;
@@ -76,15 +84,17 @@ public class BrokerManager implements Closeable, Runnable, FrameProcessorFactory
         new Thread(this).start();
     }
 
-    public void executeAndWaitForReady() throws IOException, InterruptedException {
+    public void executeAndWaitForReady() throws IOException, InterruptedException, NotStartedException {
         launcher.execute(false);
         new Thread(this).start();
 
-        final Observer observer = new Observer();
-        observer.addRunner(this::onBrokerReady);
-        observer.addConsumer(this::onExceptionRaised);
+        final Awaiter awaiter = new Awaiter();
+        awaiter.addRunner(this::onBrokerReady);
+        awaiter.addConsumer(this::onExceptionRaised);
 
-        observer.waitOnMessages();
+        if(!awaiter.waitOnMessages(15, TimeUnit.SECONDS)){
+            throw new NotStartedException("Failed to start broker in the given 15 seconds!");
+        }
     }
 
     public void onBrokerReady(Runnable runnable){
@@ -103,9 +113,10 @@ public class BrokerManager implements Closeable, Runnable, FrameProcessorFactory
     public void close(){
         try {
             if(launcher.isRunning()){
-                Sender.sendFrame(Constants.LOCALHOST, remotePort, new StopFrame());
+                MessageUtils.sendMessageToTopic(Constants.TOPIC_ADMIN, new StopFrame());
+                MessageUtils.sendMessageToQueue(this.name, new StopFrame());
             }
-        } catch (IOException e) {
+        } catch (JMSException | NotInitializedException e) {
             logger.printf(
                     Level.ERROR,
                     "Forcibly killing broker because management socket is already closed: [%s] %s",
@@ -114,6 +125,7 @@ public class BrokerManager implements Closeable, Runnable, FrameProcessorFactory
             );
 
             launcher.kill();
+            exceptionConsumers.forEach(c -> c.accept(e));
         }
     }
 
@@ -133,16 +145,17 @@ public class BrokerManager implements Closeable, Runnable, FrameProcessorFactory
     }
 
     @Override
-    public FrameProcessor getFrameProcessor(int code){
-        if(EndFrame.CODE == code) return frame -> {
-            launcher.kill();
+    public FrameProcessor getFrameProcessor(int code) throws FrameCodeNotSupported{
+        if(StopFrame.CODE == code) return frame -> {
+            boolean stopped = waitUntilStopRunning(10000);
+
+            if(!stopped){
+                logger.error("Forcibly killing broker because shutdown is too slow");
+                launcher.kill();
+            }
+
             stopRunnables.forEach(Runnable::run);
             return false;
-        };
-
-        if(AddressFrame.CODE == code) return frame -> {
-            this.remotePort = ((AddressFrame)frame).getPort();
-            return true;
         };
 
         if(ExceptionFrame.CODE == code) return frame -> {
@@ -160,11 +173,23 @@ public class BrokerManager implements Closeable, Runnable, FrameProcessorFactory
         };
 
         if(ReadyBrokerFrame.CODE == code) return frame -> {
-            readyRunnables.forEach(Runnable::run);
-            return true;
+            try {
+                topicConnection = BrokerUtils.getTopicConnection();
+                topicSession = topicConnection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
+                topicConnection.setExceptionListener(this);
+                final Topic topic = topicSession.createTopic(Constants.TOPIC_ADMIN);
+                final MessageConsumer topicConsumer = topicSession.createConsumer(topic);
+                topicConsumer.setMessageListener(this);
+                readyRunnables.forEach(Runnable::run);
+                return true;
+            } catch (NotInitializedException | JMSException e) {
+                e.printStackTrace();
+            }
+
+            return false;
         };
 
-        throw new IllegalArgumentException(String.format("Frame of code %s not supported", code));
+        throw new FrameCodeNotSupported();
     }
 
     @Override
@@ -172,11 +197,24 @@ public class BrokerManager implements Closeable, Runnable, FrameProcessorFactory
         final Set<Class<? extends Frame>> allowedClasses = new HashSet<>(4);
 
         allowedClasses.add(AddressFrame.class);
-        allowedClasses.add(EndFrame.class);
+        allowedClasses.add(StopFrame.class);
         allowedClasses.add(ExceptionFrame.class);
         allowedClasses.add(ReadyBrokerFrame.class);
 
         return allowedClasses;
+    }
+
+    private boolean waitUntilStopRunning(long timeout){
+        try {
+            await().atMost(timeout, TimeUnit.MILLISECONDS)
+                    .with().pollInterval(Duration.ONE_HUNDRED_MILLISECONDS)
+                    .until(() -> !isRunning());
+        }
+        catch (Exception e){
+            return false;
+        }
+
+        return true;
     }
 
     private void closeManagementSocket(){
@@ -188,6 +226,44 @@ public class BrokerManager implements Closeable, Runnable, FrameProcessorFactory
                     e.getClass().getSimpleName(),
                     e.getMessage()
             );
+        }
+    }
+
+    @Override
+    public void onMessage(Message message) {
+        Frame frame = null;
+
+        try{
+            if(message instanceof ObjectMessage){
+                frame = (Frame)((ObjectMessage)message).getObject();
+                getFrameProcessor(frame.getCode()).process(frame);
+            }
+        }
+        catch (JMSException e) {
+            logger.printf(Level.ERROR,
+                    "Failed when receiving message: [%s] %s",
+                    e.getClass().getSimpleName(),
+                    e.getMessage()
+            );
+        }
+        catch (FrameCodeNotSupported e){
+            logger.printf(Level.ERROR,
+                    "[%s] %s not supported",
+                    e.getClass().getSimpleName(),
+                    frame.getClass().getSimpleName()
+            );
+        }
+    }
+
+    @Override
+    public void onException(JMSException exception) {
+        if(exception.getMessage().equals("java.io.EOFException")){
+            logger.info("Broker is closing");
+            try {
+                topicConnection.close();
+            } catch (JMSException e) {
+                //ignore
+            }
         }
     }
 }

@@ -24,9 +24,6 @@ package lu.uni.serval.commons.runner.utils.messaging.activemq.broker;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.Constants;
 import lu.uni.serval.commons.runner.utils.messaging.frame.*;
 import lu.uni.serval.commons.runner.utils.messaging.socket.Sender;
-import lu.uni.serval.commons.runner.utils.messaging.socket.Listener;
-import lu.uni.serval.commons.runner.utils.messaging.socket.processor.FrameProcessor;
-import lu.uni.serval.commons.runner.utils.messaging.socket.processor.FrameProcessorFactory;
 import org.apache.activemq.broker.BrokerService;
 import org.apache.activemq.broker.TransportConnector;
 import org.apache.activemq.usage.SystemUsage;
@@ -35,24 +32,23 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.jms.*;
 import java.io.*;
-import java.net.ServerSocket;
 import java.net.URI;
-import java.util.Collections;
-import java.util.Set;
 
-public class BrokerProcess implements Runnable, Closeable, FrameProcessorFactory {
+public class BrokerProcess implements Closeable, MessageListener {
     private static final Logger logger = LogManager.getLogger(BrokerProcess.class);
     private static final long STORAGE_LIMIT = 1024L * 1024L * 8L;
 
     private final BrokerService service;
-    private final ServerSocket managementSocket;
-    private final int remotePort;
+    private final QueueConnection queueConnection;
+    private final QueueSession queueSession;
+    private final MessageConsumer queueConsumer;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         int remotePort = -1;
 
-        try(ServerSocket managementSocket = new ServerSocket(0)){
+        try{
             final Options options = new Options();
             final CommandLineParser parser = new DefaultParser();
 
@@ -67,15 +63,12 @@ public class BrokerProcess implements Runnable, Closeable, FrameProcessorFactory
             final String name = cmd.getOptionValue("name", "activemq-broker");
             final String brokerUrl = cmd.getOptionValue("brokerUrl");
 
-            try(BrokerProcess broker = new BrokerProcess(brokerUrl, name, managementSocket, remotePort)){
-                broker.start();
-                broker.waitUntilStarted();
-
-
+            BrokerInfo.initialize(brokerUrl);
+            try(BrokerProcess broker = new BrokerProcess(brokerUrl, name)){
+                logger.info("Send ready Frame");
+                Sender.sendFrame(Constants.LOCALHOST, remotePort, new ReadyBrokerFrame());
                 broker.waitUntilStopped();
             }
-
-            Sender.sendFrame(Constants.LOCALHOST, remotePort, new EndFrame("close"));
         } catch (Exception e) {
             if(remotePort != -1){
                 try {
@@ -94,28 +87,16 @@ public class BrokerProcess implements Runnable, Closeable, FrameProcessorFactory
 
             System.exit(-1);
         }
-    }
-
-    private void start() throws Exception {
-        this.service.start();
-        this.service.waitUntilStarted();
-        new Thread(this).start();
-
-        Sender.sendFrame(Constants.LOCALHOST, remotePort, new ReadyBrokerFrame());
-    }
-
-    private void waitUntilStarted() {
-        this.service.waitUntilStarted();
+        finally {
+            Sender.sendFrame(Constants.LOCALHOST, remotePort, new StopFrame());
+        }
     }
 
     private void waitUntilStopped() {
         this.service.waitUntilStopped();
     }
 
-    private BrokerProcess(String bindAddress, String name, ServerSocket managementSocket, int remotePort) throws Exception {
-        this.managementSocket = managementSocket;
-        this.remotePort = remotePort;
-
+    private BrokerProcess(String bindAddress, String name) throws Exception {
         service = new BrokerService();
         service.setBrokerName(name);
 
@@ -129,53 +110,53 @@ public class BrokerProcess implements Runnable, Closeable, FrameProcessorFactory
         TransportConnector connector = new TransportConnector();
         connector.setUri(new URI(bindAddress));
         service.addConnector(connector);
-    }
 
-    @Override
-    public void run() {
-        try {
-            logger.info("Start management listening...");
-            Sender.sendFrame(Constants.LOCALHOST, remotePort, new AddressFrame(managementSocket.getLocalPort()));
-            Listener.listen(managementSocket, this);
-        } catch (Exception e) {
-            try {
-                Sender.sendFrame(Constants.LOCALHOST, remotePort, new ExceptionFrame(e));
-            } catch (IOException ignore) {
-                //ignore
-            }
+        this.service.start();
+        this.service.waitUntilStarted();
 
-            logger.printf(
-                    Level.ERROR,
-                    "Management thread stopped abruptly: [%s] %s",
-                    e.getClass().getSimpleName(),
-                    e.getMessage()
-            );
-        }
-        finally {
-            close();
-        }
+        queueConnection = BrokerUtils.getQueueConnection("lu.uni.serval.commons.runner.utils.messaging.frame");
+        queueSession = queueConnection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
+        final Queue queue = queueSession.createQueue(name);
+        queueConsumer = queueSession.createConsumer(queue);
+        queueConsumer.setMessageListener(this);
     }
 
     @Override
     public void close() {
         if(this.service != null){
             try {
+                this.queueConsumer.close();
+                this.queueSession.close();
+                this.queueConnection.close();
                 this.service.stop();
             } catch (Exception e) {
-                logger.error("Failed to properly stop broker");
+                logger.printf(
+                        Level.ERROR,
+                        "Failed to properly close broker: [%s] %s",
+                        e.getClass().getSimpleName(),
+                        e.getMessage()
+                );
             }
         }
     }
 
     @Override
-    public FrameProcessor getFrameProcessor(int code) {
-        if(StopFrame.CODE == code) return frame -> false;
-
-        throw new IllegalArgumentException(String.format("Frame of type %s not supported", code));
-    }
-
-    @Override
-    public Set<Class<? extends Frame>> getAllowedClasses() {
-        return Collections.singleton(StopFrame.class);
+    public void onMessage(Message message) {
+        try{
+            if(message instanceof ObjectMessage){
+                final Frame frame = (Frame)((ObjectMessage)message).getObject();
+                if(frame.getCode() == StopFrame.CODE){
+                    logger.info("Received Stop Message");
+                    close();
+                }
+            }
+        } catch (JMSException e) {
+            logger.printf(
+                    Level.ERROR,
+                    "Failed to process JMS Message: [%s] %s",
+                    e.getClass().getSimpleName(),
+                    e.getMessage()
+            );
+        }
     }
 }

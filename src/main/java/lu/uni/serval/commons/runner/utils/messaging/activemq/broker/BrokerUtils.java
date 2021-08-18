@@ -25,19 +25,12 @@ import lu.uni.serval.commons.runner.utils.exception.NotInitializedException;
 import org.apache.activemq.ActiveMQConnectionFactory;
 
 import javax.jms.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class BrokerUtils {
     private BrokerUtils() {}
 
-    public static QueueConnection getQueueConnection() throws JMSException, NotInitializedException {
-        return getQueueConnection(Collections.emptyList());
-    }
-
-    public static QueueConnection getQueueConnection(Collection<String> trustedPackages) throws JMSException, NotInitializedException {
+    public static QueueConnection getQueueConnection(String... trustedPackages) throws JMSException, NotInitializedException {
         final String brokerUrl = BrokerInfo.url();
 
         final ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory(brokerUrl);
@@ -49,11 +42,7 @@ public class BrokerUtils {
         return connection;
     }
 
-    public static TopicConnection getTopicConnection() throws NotInitializedException, JMSException {
-        return getTopicConnection(Collections.emptyList());
-    }
-
-    public static TopicConnection getTopicConnection(Collection<String> trustedPackages) throws JMSException, NotInitializedException {
+    public static TopicConnection getTopicConnection(String... trustedPackages) throws JMSException, NotInitializedException {
         final String brokerUrl = BrokerInfo.url();
 
         final ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory(brokerUrl);
@@ -65,10 +54,10 @@ public class BrokerUtils {
         return connection;
     }
 
-    private static List<String> getTrustedPackages(Collection<String> trustedPackages){
-        final List<String> trusted = new ArrayList<>(trustedPackages.size() + 1);
+    private static List<String> getTrustedPackages(String... trustedPackages){
+        final List<String> trusted = new ArrayList<>(trustedPackages.length + 1);
         trusted.add("lu.uni.serval");
-        trusted.addAll(trustedPackages);
+        trusted.addAll(Arrays.asList(trustedPackages));
 
         return trusted;
     }
