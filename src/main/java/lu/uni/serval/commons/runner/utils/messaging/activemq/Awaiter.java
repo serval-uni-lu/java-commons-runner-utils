@@ -21,21 +21,28 @@ package lu.uni.serval.commons.runner.utils.messaging.activemq;
  */
 
 
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public class Awaiter {
+    private static final Logger logger = LogManager.getLogger(Awaiter.class);
+
     private final Set<Consumer<Runnable>> runnables = new HashSet<>();
     private final Set<Consumer<Consumer>> consumers = new HashSet<>();
 
-    public void addRunner(Consumer<Runnable> callback){
+    public void listen(Consumer<Runnable> callback){
         runnables.add(callback);
     }
 
-    public void addConsumer(Consumer<Consumer> callback){
+    public void listenWithArg(Consumer<Consumer> callback){
         consumers.add(callback);
     }
 
@@ -46,5 +53,23 @@ public class Awaiter {
         consumers.forEach(m -> m.accept(e -> countDownLatch.countDown()));
 
         return countDownLatch.await(timeout, timeUnit);
+    }
+
+    public static boolean waitUntil(int timeout, Callable<Boolean> condition){
+        try{
+            long maxTime = timeout + System.currentTimeMillis();
+            while (maxTime > System.currentTimeMillis()){
+                if(Boolean.TRUE.equals(condition.call())) return true;
+                Thread.sleep(100);
+            }
+        } catch (Exception e) {
+            logger.printf(Level.ERROR,
+                    "Failure during waiting on condition: [%s] %s",
+                    e.getClass().getSimpleName(),
+                    e.getMessage()
+            );
+        }
+
+        return false;
     }
 }

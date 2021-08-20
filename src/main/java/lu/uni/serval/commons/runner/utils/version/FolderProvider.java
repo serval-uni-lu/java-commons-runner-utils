@@ -28,6 +28,7 @@ import java.io.File;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -55,40 +56,40 @@ public class FolderProvider implements VersionProvider {
     @Override
     public Iterator<Version> iterator() {
         return new Iterator<Version>() {
-            private final List<File> subFolders = getSubFolders();
-            private final Iterator<File> subFoldersIterator = subFolders.iterator();
-            private int commitCounter = 0;
+            private final List<File> targetFolders = getTargetFolders();
+            private final Iterator<File> folderIterator = targetFolders.iterator();
 
             @Override
             public boolean hasNext() {
-                return subFoldersIterator.hasNext();
+                return folderIterator.hasNext();
             }
 
             @Override
             public Version next() {
-                final File subFolder = subFoldersIterator.next();
+                final File folder = folderIterator.next();
                 LocalDateTime date;
-                String commitId;
 
                 if(nameFormat == FolderConfiguration.NameFormat.DATE) {
-                    date = LocalDateTime.parse(subFolder.getName(), DateTimeFormatter.ofPattern(dateFormat));
-                    commitId = String.format("Commit%d", ++commitCounter);
+                    date = LocalDateTime.parse(folder.getName(), DateTimeFormatter.ofPattern(dateFormat));
                 }
                 else {
-                        date = LocalDateTime.now();
-                        commitId = subFolder.getName();
+                    date = LocalDateTime.now();
                 }
 
                 return new Version(
-                        subFolder.getName(),
-                        subFolder,
+                        folder.getName(),
+                        folder,
                         date,
-                        commitId,
+                        "",
                         "",
                         mavenConfiguration);
             }
 
-            private List<File> getSubFolders(){
+            private List<File> getTargetFolders(){
+                if(nameFormat == FolderConfiguration.NameFormat.SINGLE){
+                    return Collections.singletonList(rootFolder);
+                }
+
                 return Stream.of(Objects.requireNonNull(rootFolder.listFiles(
                             (File current, String name) -> new File(current, name).isDirectory())
                         ))

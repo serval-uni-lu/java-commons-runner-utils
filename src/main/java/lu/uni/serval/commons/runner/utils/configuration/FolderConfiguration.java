@@ -28,7 +28,8 @@ import java.io.File;
 public class FolderConfiguration extends Configuration{
     public enum NameFormat{
         VERSION,
-        DATE
+        DATE,
+        SINGLE
     }
 
     @JsonProperty(value = "root folder", required = true)

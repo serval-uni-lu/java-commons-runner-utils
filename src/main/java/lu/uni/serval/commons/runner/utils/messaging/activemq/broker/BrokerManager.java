@@ -35,7 +35,6 @@ import lu.uni.serval.commons.runner.utils.process.ClassLauncher;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.awaitility.Duration;
 
 import javax.jms.*;
 import java.io.Closeable;
@@ -45,8 +44,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-
-import static org.awaitility.Awaitility.await;
 
 public class BrokerManager implements Closeable, Runnable, FrameProcessorFactory, MessageListener, ExceptionListener {
     private static final Logger logger = LogManager.getLogger(BrokerManager.class);
@@ -89,8 +86,8 @@ public class BrokerManager implements Closeable, Runnable, FrameProcessorFactory
         new Thread(this).start();
 
         final Awaiter awaiter = new Awaiter();
-        awaiter.addRunner(this::onBrokerReady);
-        awaiter.addConsumer(this::onExceptionRaised);
+        awaiter.listen(this::onBrokerReady);
+        awaiter.listenWithArg(this::onExceptionRaised);
 
         if(!awaiter.waitOnMessages(15, TimeUnit.SECONDS)){
             throw new NotStartedException("Failed to start broker in the given 15 seconds!");
@@ -147,7 +144,7 @@ public class BrokerManager implements Closeable, Runnable, FrameProcessorFactory
     @Override
     public FrameProcessor getFrameProcessor(int code) throws FrameCodeNotSupported{
         if(StopFrame.CODE == code) return frame -> {
-            boolean stopped = waitUntilStopRunning(10000);
+            boolean stopped = Awaiter.waitUntil(10000, () -> !isRunning());
 
             if(!stopped){
                 logger.error("Forcibly killing broker because shutdown is too slow");
@@ -202,19 +199,6 @@ public class BrokerManager implements Closeable, Runnable, FrameProcessorFactory
         allowedClasses.add(ReadyBrokerFrame.class);
 
         return allowedClasses;
-    }
-
-    private boolean waitUntilStopRunning(long timeout){
-        try {
-            await().atMost(timeout, TimeUnit.MILLISECONDS)
-                    .with().pollInterval(Duration.ONE_HUNDRED_MILLISECONDS)
-                    .until(() -> !isRunning());
-        }
-        catch (Exception e){
-            return false;
-        }
-
-        return true;
     }
 
     private void closeManagementSocket(){
