@@ -28,7 +28,7 @@ import lu.uni.serval.commons.runner.utils.helpers.TestManagedClass;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.Constants;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.MessageUtils;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.broker.BrokerInfo;
-import lu.uni.serval.commons.runner.utils.messaging.activemq.broker.BrokerManager;
+import lu.uni.serval.commons.runner.utils.messaging.activemq.broker.BrokerLauncher;
 import lu.uni.serval.commons.runner.utils.messaging.frame.ClosingFrame;
 import lu.uni.serval.commons.runner.utils.messaging.frame.Frame;
 import lu.uni.serval.commons.runner.utils.messaging.frame.ReadyFrame;
@@ -43,19 +43,19 @@ import java.io.IOException;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ManagedClassLauncherTest {
-    private static BrokerManager brokerManager;
+    private static BrokerLauncher brokerLauncher;
 
     @BeforeAll
     static void startBroker() throws IOException, InterruptedException, AlreadyInitializedException, NotInitializedException, NotStartedException {
         BrokerInfo.initialize(Constants.DEFAULT_BROKER_PROTOCOL, Constants.DEFAULT_BROKER_HOST, Constants.DEFAULT_BROKER_PORT);
 
-        brokerManager = new BrokerManager("testBroker");
-        brokerManager.executeAndWaitForReady();
+        brokerLauncher = new BrokerLauncher("testBroker");
+        brokerLauncher.executeAndWaitForReady();
     }
 
     @AfterAll
     static void stopBroker() {
-        brokerManager.close();
+        brokerLauncher.close();
     }
 
     @Test

@@ -26,7 +26,7 @@ import lu.uni.serval.commons.runner.utils.exception.NotInitializedException;
 import lu.uni.serval.commons.runner.utils.exception.NotStartedException;
 import lu.uni.serval.commons.runner.utils.helpers.TestManagedClass;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.broker.BrokerInfo;
-import lu.uni.serval.commons.runner.utils.messaging.activemq.broker.BrokerManager;
+import lu.uni.serval.commons.runner.utils.messaging.activemq.broker.BrokerLauncher;
 import lu.uni.serval.commons.runner.utils.process.ManagedClassLauncher;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,7 +38,7 @@ import java.net.Socket;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class BrokerManagerTest {
+class BrokerLauncherTest {
     @BeforeAll
     static void initializeBrokerInfo() throws AlreadyInitializedException {
         BrokerInfo.initialize(Constants.DEFAULT_BROKER_PROTOCOL, Constants.DEFAULT_BROKER_HOST, Constants.DEFAULT_BROKER_PORT);
@@ -48,12 +48,12 @@ class BrokerManagerTest {
 
     @Test
     void testStartAndStop() throws IOException, InterruptedException, NotInitializedException, NotStartedException {
-        final BrokerManager brokerManager = new BrokerManager("testBroker");
-        brokerManager.executeAndWaitForReady();
-        assertTrue(brokerManager.isRunning());
-        brokerManager.close();
+        final BrokerLauncher brokerLauncher = new BrokerLauncher("testBroker");
+        brokerLauncher.executeAndWaitForReady();
+        assertTrue(brokerLauncher.isRunning());
+        brokerLauncher.close();
 
-        assertTrue(Awaiter.waitUntil(10000, () -> !brokerManager.isRunning()));
+        assertTrue(Awaiter.waitUntil(10000, () -> !brokerLauncher.isRunning()));
         assertThrows(ConnectException.class, () -> new Socket(Constants.DEFAULT_BROKER_HOST, Constants.DEFAULT_BROKER_PORT));
     }
 
@@ -61,8 +61,8 @@ class BrokerManagerTest {
     void testStopManagedProcesses() throws NotInitializedException, IOException, InterruptedException, NotStartedException {
         final ManagedClassLauncher launcher = new ManagedClassLauncher(TestManagedClass.class);
 
-        try(final BrokerManager brokerManager = new BrokerManager("testBroker")){
-            brokerManager.executeAndWaitForReady();
+        try(final BrokerLauncher brokerLauncher = new BrokerLauncher("testBroker")){
+            brokerLauncher.executeAndWaitForReady();
             launcher.execute(false);
             // give time for the process to properly start
             Thread.sleep(3000);

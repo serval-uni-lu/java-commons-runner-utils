@@ -65,124 +65,126 @@ public class GitProvider implements VersionProvider {
 
     @Override
     public Iterator<Version> iterator() {
-        return new Iterator<Version>() {
-            private final Iterator<RepositoryConfiguration> configIterator = configuration.getRepositories().iterator();
+        return new GitIterator();
+    }
 
-            private Iterator<GitCommit> commitIterator = null;
-            private LocalRepository repository = null;
-            private MavenConfiguration mavenConfiguration = null;
+    class GitIterator implements Iterator<Version> {
+        private final Iterator<RepositoryConfiguration> configIterator = configuration.getRepositories().iterator();
 
-            @Override
-            public boolean hasNext() {
-                while(commitIterator == null || !commitIterator.hasNext()){
-                    if(configIterator.hasNext()){
-                        initialize(configIterator.next());
-                    }
-                    else break;
+        private Iterator<GitCommit> commitIterator = null;
+        private LocalRepository repository = null;
+        private MavenConfiguration mavenConfiguration = null;
+
+        @Override
+        public boolean hasNext() {
+            while(commitIterator == null || !commitIterator.hasNext()){
+                if(configIterator.hasNext()){
+                    initialize(configIterator.next());
                 }
-
-                return commitIterator != null && commitIterator.hasNext();
+                else break;
             }
 
-            @Override
-            public Version next() {
-                if(!hasNext()){
-                    return null;
-                }
+            return commitIterator != null && commitIterator.hasNext();
+        }
 
-                final GitCommit commit = commitIterator.next();
-                Version version;
-
-                try {
-                    GitUtils.checkout(repository.getGit(), commit.getId());
-
-                    final LocalDateTime dateTime = commit.getDate().atZone(ZoneId.systemDefault()).toLocalDateTime();
-
-                    version = new Version(
-                            repository.getRemoteUrl(),
-                            repository.getLocation(),
-                            dateTime,
-                            commit.getId(),
-                            commit.getDifference().getFormatted(),
-                            mavenConfiguration
-                    );
-                } catch (GitAPIException | IOException e) {
-                    logger.error(String.format("Git API error failed to load commit %s from %s: %s",
-                            commit.getId(),
-                            repository.getRemoteUrl(),
-                            e.getMessage()
-                    ));
-                    return next();
-                }
-
-                return version;
+        @Override
+        public Version next() {
+            if(!hasNext()){
+                return null;
             }
 
-            private void initialize(RepositoryConfiguration repository){
-                if(repository.isIgnore()){
-                    reset();
-                    return;
+            final GitCommit commit = commitIterator.next();
+            Version version;
+
+            try {
+                GitUtils.checkout(repository.getGit(), commit.getId());
+
+                final LocalDateTime dateTime = commit.getDate().atZone(ZoneId.systemDefault()).toLocalDateTime();
+
+                version = new Version(
+                        repository.getRemoteUrl(),
+                        repository.getLocation(),
+                        dateTime,
+                        commit.getId(),
+                        commit.getDifference().getFormatted(),
+                        mavenConfiguration
+                );
+            } catch (GitAPIException | IOException e) {
+                logger.error(String.format("Git API error failed to load commit %s from %s: %s",
+                        commit.getId(),
+                        repository.getRemoteUrl(),
+                        e.getMessage()
+                ));
+                return next();
+            }
+
+            return version;
+        }
+
+        private void initialize(RepositoryConfiguration repository){
+            if(repository.isIgnore()){
+                reset();
+                return;
+            }
+
+            try {
+                mavenConfiguration = repository.getProcessConfiguration();
+
+                final File repositoryFolder = new File(tmpFolder, GitUtils.extractProjectName(repository.getLocation()));
+
+                logger.printf(Level.INFO,
+                        "Loading repository from %s...",
+                        repository.getLocation()
+                );
+
+                this.repository = GitUtils.loadCurrentRepository(
+                        repository.getLocation(),
+                        configuration.getToken(),
+                        repositoryFolder,
+                        repository.getBranch()
+                );
+
+                repositories.add(this.repository);
+
+                logger.info("Repository loaded!");
+
+                if(isCherryPick(repository)){
+                    commitIterator = new CommitCollector()
+                            .forGit(this.repository.getGit())
+                            .cherryPick(repository.getCherryPick()).iterator();
+                }
+                else {
+                    commitIterator = new CommitCollector()
+                            .forGit(this.repository.getGit())
+                            .onBranch(repository.getBranch())
+                            .from(repository.getStartDate())
+                            .to(repository.getEndDate())
+                            .ignoring(repository.getIgnoreCommits())
+                            .every(repository.getFrequency())
+                            .limit(repository.getMaximumCommitsNumber())
+                            .collect().iterator();
                 }
 
-                try {
-                    mavenConfiguration = repository.getProcessConfiguration();
+                logger.info("Commits resolved!");
+            } catch (InvalidGitRepositoryException | IOException | GitAPIException e) {
+                logger.error(String.format("Failed to initialize repository '%s': [%s] %s",
+                        repository.getLocation(),
+                        e.getClass().getSimpleName(),
+                        e.getMessage()
+                ));
 
-                    final File repositoryFolder = new File(tmpFolder, GitUtils.extractProjectName(repository.getLocation()));
-
-                    logger.printf(Level.INFO,
-                            "Loading repository from %s...",
-                            repository.getLocation()
-                    );
-
-                    this.repository = GitUtils.loadCurrentRepository(
-                            repository.getLocation(),
-                            configuration.getToken(),
-                            repositoryFolder,
-                            repository.getBranch()
-                    );
-
-                    repositories.add(this.repository);
-
-                    logger.info("Repository loaded!");
-
-                    if(isCherryPick(repository)){
-                        commitIterator = new CommitCollector()
-                                .forGit(this.repository.getGit())
-                                .cherryPick(repository.getCherryPick()).iterator();
-                    }
-                    else {
-                        commitIterator = new CommitCollector()
-                                .forGit(this.repository.getGit())
-                                .onBranch(repository.getBranch())
-                                .from(repository.getStartDate())
-                                .to(repository.getEndDate())
-                                .ignoring(repository.getIgnoreCommits())
-                                .every(repository.getFrequency())
-                                .limit(repository.getMaximumCommitsNumber())
-                                .collect().iterator();
-                    }
-
-                    logger.info("Commits resolved!");
-                } catch (InvalidGitRepositoryException | IOException | GitAPIException e) {
-                    logger.error(String.format("Failed to initialize repository '%s': [%s] %s",
-                            repository.getLocation(),
-                            e.getClass().getSimpleName(),
-                            e.getMessage()
-                    ));
-
-                    reset();
-                }
+                reset();
             }
+        }
 
-            private boolean isCherryPick(RepositoryConfiguration repository){
-                return repository.getCherryPick() != null && repository.getCherryPick().length != 0;
-            }
+        private boolean isCherryPick(RepositoryConfiguration repository){
+            return repository.getCherryPick() != null && repository.getCherryPick().length != 0;
+        }
 
-            private void reset(){
-                this.repository = null;
-                this.commitIterator = null;
-                this.mavenConfiguration = null;
-            }
-        };
+        private void reset(){
+            this.repository = null;
+            this.commitIterator = null;
+            this.mavenConfiguration = null;
+        }
     }
 }

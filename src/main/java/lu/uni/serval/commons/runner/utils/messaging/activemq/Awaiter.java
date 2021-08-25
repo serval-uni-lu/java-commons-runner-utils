@@ -62,6 +62,9 @@ public class Awaiter {
                 if(Boolean.TRUE.equals(condition.call())) return true;
                 Thread.sleep(100);
             }
+        } catch (InterruptedException e) {
+            logger.warn("Thread interrupted by user");
+            Thread.currentThread().interrupt();
         } catch (Exception e) {
             logger.printf(Level.ERROR,
                     "Failure during waiting on condition: [%s] %s",
@@ -69,7 +72,6 @@ public class Awaiter {
                     e.getMessage()
             );
         }
-
         return false;
     }
 }

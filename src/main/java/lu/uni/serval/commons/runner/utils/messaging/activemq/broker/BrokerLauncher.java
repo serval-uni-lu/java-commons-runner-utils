@@ -45,8 +45,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-public class BrokerManager implements Closeable, Runnable, FrameProcessorFactory, MessageListener, ExceptionListener {
-    private static final Logger logger = LogManager.getLogger(BrokerManager.class);
+public class BrokerLauncher implements Closeable, Runnable, FrameProcessorFactory, MessageListener, ExceptionListener {
+    private static final Logger logger = LogManager.getLogger(BrokerLauncher.class);
 
     private final String name;
 
@@ -59,7 +59,7 @@ public class BrokerManager implements Closeable, Runnable, FrameProcessorFactory
     private TopicConnection topicConnection;
     private TopicSession topicSession;
 
-    public BrokerManager(String name) throws IOException, NotInitializedException {
+    public BrokerLauncher(String name) throws IOException, NotInitializedException {
         this.name = name;
 
         this.readyRunnables = new HashSet<>();
@@ -180,7 +180,12 @@ public class BrokerManager implements Closeable, Runnable, FrameProcessorFactory
                 readyRunnables.forEach(Runnable::run);
                 return true;
             } catch (NotInitializedException | JMSException e) {
-                e.printStackTrace();
+                logger.printf(
+                        Level.ERROR,
+                        "Failed to create channels and trigger callbacks after receiving ReadyBrokerFrame: [%s] %s",
+                        e.getClass().getSimpleName(),
+                        e.getMessage()
+                );
             }
 
             return false;

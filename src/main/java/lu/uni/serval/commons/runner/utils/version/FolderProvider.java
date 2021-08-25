@@ -55,66 +55,68 @@ public class FolderProvider implements VersionProvider {
 
     @Override
     public Iterator<Version> iterator() {
-        return new Iterator<Version>() {
-            private final List<File> targetFolders = getTargetFolders();
-            private final Iterator<File> folderIterator = targetFolders.iterator();
+        return new FolderIterator();
+    }
 
-            @Override
-            public boolean hasNext() {
-                return folderIterator.hasNext();
+    class FolderIterator implements Iterator<Version> {
+        private final List<File> targetFolders = getTargetFolders();
+        private final Iterator<File> fileIterator = targetFolders.iterator();
+
+        @Override
+        public boolean hasNext() {
+            return fileIterator.hasNext();
+        }
+
+        @Override
+        public Version next() {
+            final File folder = fileIterator.next();
+            LocalDateTime date;
+
+            if(nameFormat == FolderConfiguration.NameFormat.DATE) {
+                date = LocalDateTime.parse(folder.getName(), DateTimeFormatter.ofPattern(dateFormat));
+            }
+            else {
+                date = LocalDateTime.now();
             }
 
-            @Override
-            public Version next() {
-                final File folder = folderIterator.next();
-                LocalDateTime date;
+            return new Version(
+                    folder.getName(),
+                    folder,
+                    date,
+                    "",
+                    "",
+                    mavenConfiguration);
+        }
 
-                if(nameFormat == FolderConfiguration.NameFormat.DATE) {
-                    date = LocalDateTime.parse(folder.getName(), DateTimeFormatter.ofPattern(dateFormat));
-                }
-                else {
-                    date = LocalDateTime.now();
-                }
-
-                return new Version(
-                        folder.getName(),
-                        folder,
-                        date,
-                        "",
-                        "",
-                        mavenConfiguration);
+        private List<File> getTargetFolders(){
+            if(nameFormat == FolderConfiguration.NameFormat.SINGLE){
+                return Collections.singletonList(rootFolder);
             }
 
-            private List<File> getTargetFolders(){
-                if(nameFormat == FolderConfiguration.NameFormat.SINGLE){
-                    return Collections.singletonList(rootFolder);
-                }
-
-                return Stream.of(Objects.requireNonNull(rootFolder.listFiles(
+            return Stream.of(Objects.requireNonNull(rootFolder.listFiles(
                             (File current, String name) -> new File(current, name).isDirectory())
-                        ))
-                        .sorted(this::sortSubFolder)
-                        .collect(Collectors.toList());
+                    ))
+                    .sorted(this::sortSubFolder)
+                    .collect(Collectors.toList());
+        }
+
+        private int sortSubFolder(File file1, File file2) {
+            final String name1 = file1.getName();
+            final String name2 = file2.getName();
+
+            int compare;
+
+            if(nameFormat == FolderConfiguration.NameFormat.DATE){
+                final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormat);
+                final LocalDate date1 = LocalDate.from(dateTimeFormatter.parse(name1));
+                final LocalDate date2 = LocalDate.from(dateTimeFormatter.parse(name2));
+                compare = date1.compareTo(date2);
+            }
+            else {
+                compare = name1.compareToIgnoreCase(name2);
             }
 
-            private int sortSubFolder(File file1, File file2) {
-                final String name1 = file1.getName();
-                final String name2 = file2.getName();
-
-                int compare;
-
-                if(nameFormat == FolderConfiguration.NameFormat.DATE){
-                    final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateFormat);
-                    final LocalDate date1 = LocalDate.from(dateTimeFormatter.parse(name1));
-                    final LocalDate date2 = LocalDate.from(dateTimeFormatter.parse(name2));
-                    compare = date1.compareTo(date2);
-                }
-                else {
-                    compare = name1.compareToIgnoreCase(name2);
-                }
-
-                return compare;
-            }
-        };
+            return compare;
+        }
     }
 }
