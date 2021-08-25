@@ -159,7 +159,7 @@ public class BrokerProcess implements Closeable, MessageListener {
         }
 
         if(pending > 0){
-            logger.printf(Level.ERROR, "Waiting on %d messages to be dispatched", pending);
+            logger.printf(Level.INFO, "Waiting on %d messages to be dispatched", pending);
             try {
                 TimeUnit.MILLISECONDS.sleep(polling);
                 waitOnPendingMessages(retries - 1, polling);
