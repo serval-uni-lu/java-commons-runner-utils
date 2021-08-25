@@ -25,6 +25,7 @@ import lu.uni.serval.commons.runner.utils.messaging.activemq.Constants;
 import lu.uni.serval.commons.runner.utils.messaging.frame.*;
 import lu.uni.serval.commons.runner.utils.messaging.socket.Sender;
 import org.apache.activemq.broker.BrokerService;
+import org.apache.activemq.broker.region.Destination;
 import org.apache.activemq.broker.TransportConnector;
 import org.apache.activemq.usage.SystemUsage;
 import org.apache.commons.cli.*;
@@ -35,6 +36,7 @@ import org.apache.logging.log4j.Logger;
 import javax.jms.*;
 import java.io.*;
 import java.net.URI;
+import java.util.concurrent.TimeUnit;
 
 public class BrokerProcess implements Closeable, MessageListener {
     private static final Logger logger = LogManager.getLogger(BrokerProcess.class);
@@ -125,6 +127,7 @@ public class BrokerProcess implements Closeable, MessageListener {
     public void close() {
         if(this.service != null){
             try {
+                waitOnPendingMessages(200, 100);
                 this.queueConsumer.close();
                 this.queueSession.close();
                 this.queueConnection.close();
@@ -136,6 +139,32 @@ public class BrokerProcess implements Closeable, MessageListener {
                         e.getClass().getSimpleName(),
                         e.getMessage()
                 );
+            }
+        }
+    }
+
+    public void waitOnPendingMessages(int retries, int polling){
+        if(retries == 0){
+            return;
+        }
+
+        long pending = 0;
+
+        for (Destination destination : this.service.getRegionBroker().getDestinationMap().values()) {
+            long dispatched = destination.getDestinationStatistics().getDispatched().getCount();
+            long messages = destination.getDestinationStatistics().getMessages().getCount();
+
+            pending = messages - dispatched;
+            if (pending > 0) break;
+        }
+
+        if(pending > 0){
+            logger.printf(Level.ERROR, "Waiting on %d messages to be dispatched", pending);
+            try {
+                TimeUnit.MILLISECONDS.sleep(polling);
+                waitOnPendingMessages(retries - 1, polling);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
             }
         }
     }
