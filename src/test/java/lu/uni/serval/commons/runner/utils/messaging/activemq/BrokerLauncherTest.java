@@ -53,7 +53,7 @@ class BrokerLauncherTest {
         assertTrue(brokerLauncher.isRunning());
         brokerLauncher.close();
 
-        assertTrue(Awaiter.waitUntil(10000, () -> !brokerLauncher.isRunning()));
+        assertTrue(Awaiter.waitUntil(() -> !brokerLauncher.isRunning(), 10000));
         assertThrows(ConnectException.class, () -> new Socket(Constants.DEFAULT_BROKER_HOST, Constants.DEFAULT_BROKER_PORT));
     }
 
@@ -69,6 +69,6 @@ class BrokerLauncherTest {
             assertTrue(launcher.isRunning());
         }
 
-        assertTrue(Awaiter.waitUntil(10000, () -> !launcher.isRunning()));
+        assertTrue(Awaiter.waitUntil(() -> !launcher.isRunning(), 10000));
     }
 }

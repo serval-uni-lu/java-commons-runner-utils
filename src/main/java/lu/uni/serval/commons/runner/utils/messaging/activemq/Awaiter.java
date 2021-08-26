@@ -34,6 +34,7 @@ import java.util.function.Consumer;
 
 public class Awaiter {
     private static final Logger logger = LogManager.getLogger(Awaiter.class);
+    private static final int POLL_FREQUENCY = 100;
 
     private final Set<Consumer<Runnable>> runnables = new HashSet<>();
     private final Set<Consumer<Consumer>> consumers = new HashSet<>();
@@ -55,15 +56,14 @@ public class Awaiter {
         return countDownLatch.await(timeout, timeUnit);
     }
 
-    public static boolean waitUntil(int timeout, Callable<Boolean> condition){
+    public static boolean waitUntil(Callable<Boolean> condition, long timeout){
         try{
             long maxTime = timeout + System.currentTimeMillis();
             while (maxTime > System.currentTimeMillis()){
                 if(Boolean.TRUE.equals(condition.call())) return true;
-                Thread.sleep(100);
+                TimeUnit.MILLISECONDS.sleep(POLL_FREQUENCY);
             }
         } catch (InterruptedException e) {
-            logger.warn("Thread interrupted by user");
             Thread.currentThread().interrupt();
         } catch (Exception e) {
             logger.printf(Level.ERROR,
@@ -73,5 +73,25 @@ public class Awaiter {
             );
         }
         return false;
+    }
+
+    public static void when(Callable<Boolean> condition, Runnable callback){
+        try{
+            while(Boolean.FALSE.equals(condition.call())){
+                TimeUnit.MILLISECONDS.sleep(POLL_FREQUENCY);
+            }
+
+            callback.run();
+        }
+        catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        catch (Exception e) {
+            logger.printf(Level.ERROR,
+                    "Failure during waiting on condition: [%s] %s",
+                    e.getClass().getSimpleName(),
+                    e.getMessage()
+            );
+        }
     }
 }

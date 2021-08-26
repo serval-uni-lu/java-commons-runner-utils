@@ -48,7 +48,7 @@ public class ConfigurationParser {
         }
 
         final ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModules(new Jdk8Module(), new FolderModule(file.getParentFile()));
+        mapper.registerModules(new Jdk8Module(), new FolderModule<>(file.getParentFile(), type));
         mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
 
         final T mercatorConfiguration = mapper.readValue(file, type);
@@ -61,11 +61,13 @@ public class ConfigurationParser {
         return mercatorConfiguration;
     }
 
-    public static class FolderModule extends SimpleModule {
+    public static class FolderModule<T extends Configuration> extends SimpleModule {
+        private final Class<T> type;
         private final File folder;
 
-        FolderModule(File folder){
+        FolderModule(File folder, Class<T> type){
             this.folder = folder;
+            this.type = type;
         }
 
         @Override
@@ -75,8 +77,8 @@ public class ConfigurationParser {
             {
                 @Override public JsonDeserializer<?> modifyDeserializer(DeserializationConfig config, BeanDescription beanDesc, JsonDeserializer<?> deserializer)
                 {
-                    if (Configuration.class.isAssignableFrom(beanDesc.getBeanClass())){
-                        return new Modifier(beanDesc.getBeanClass(), deserializer, folder);
+                    if (type.isAssignableFrom(beanDesc.getBeanClass())){
+                        return new Modifier<>(type, (JsonDeserializer<T>)deserializer, folder);
                     }
 
                     return deserializer;
@@ -86,10 +88,10 @@ public class ConfigurationParser {
     }
 
     public static class Modifier<T extends Configuration> extends StdDeserializer<T> implements ResolvableDeserializer{
-        private final JsonDeserializer<?> defaultDeserializer;
+        private final transient JsonDeserializer<T> defaultDeserializer;
         private final File folder;
 
-        public Modifier(Class<T> type, JsonDeserializer<?> defaultDeserializer, File folder) {
+        public Modifier(Class<T> type, JsonDeserializer<T> defaultDeserializer, File folder) {
             super(type);
 
             this.defaultDeserializer = defaultDeserializer;
@@ -97,13 +99,13 @@ public class ConfigurationParser {
         }
 
         @Override
-        public void resolve(DeserializationContext ctxt) throws JsonMappingException {
-            ((ResolvableDeserializer) defaultDeserializer).resolve(ctxt);
+        public void resolve(DeserializationContext context) throws JsonMappingException {
+            ((ResolvableDeserializer) defaultDeserializer).resolve(context);
         }
 
         @Override
-        public T deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-            T configuration = (T) defaultDeserializer.deserialize(p, ctxt);
+        public T deserialize(JsonParser p, DeserializationContext context) throws IOException {
+            T configuration = defaultDeserializer.deserialize(p, context);
             configuration.setFolder(this.folder);
 
             return configuration;

@@ -75,6 +75,8 @@ public class BrokerLauncher implements Closeable, Runnable, FrameProcessorFactor
                 .withLongNameParameter("management", String.valueOf(serverSocket.getLocalPort()))
                 .withLongNameParameter("name", this.name)
                 .withLongNameParameter("brokerUrl", BrokerInfo.url());
+
+        this.stopRunnables.add(this::closeManagementSocket);
     }
 
     public String getName() {
@@ -149,14 +151,11 @@ public class BrokerLauncher implements Closeable, Runnable, FrameProcessorFactor
     @Override
     public FrameProcessor getFrameProcessor(int code) throws FrameCodeNotSupported{
         if(StopFrame.CODE == code) return frame -> {
-            boolean stopped = Awaiter.waitUntil(10000, () -> !isRunning());
+            Awaiter.when(
+                    () -> !isRunning(),
+                    () -> stopRunnables.forEach(Runnable::run)
+            );
 
-            if(!stopped){
-                logger.error("Forcibly killing broker because shutdown is too slow");
-                launcher.kill();
-            }
-
-            stopRunnables.forEach(Runnable::run);
             return false;
         };
 
