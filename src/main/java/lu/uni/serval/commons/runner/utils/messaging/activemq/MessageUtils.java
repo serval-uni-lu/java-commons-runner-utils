@@ -30,7 +30,7 @@ import org.apache.activemq.transport.TransportListener;
 
 import javax.jms.*;
 import java.io.IOException;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 
 public class MessageUtils {
@@ -106,9 +106,9 @@ public class MessageUtils {
         }
     }
 
-    public static Optional<Frame> waitForMessage(String topicName, int code) throws JMSException, NotInitializedException, InterruptedException {
+    public static Optional<Frame> waitForMessage(String topicName, int... code) throws JMSException, NotInitializedException, InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
-        final MessageWaiter messageWaiter = new MessageWaiter(code, latch);
+        final MessageWaiter messageWaiter = new MessageWaiter(latch, code);
 
         final TopicConnection topicConnection = BrokerUtils.getTopicConnection(messageWaiter);
         final Session session = topicConnection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -150,13 +150,13 @@ public class MessageUtils {
     }
 
     private static class MessageWaiter implements TransportListener, MessageListener{
-        private final int code;
+        private final int[] codes;
         private final CountDownLatch latch;
 
         private Frame frame;
 
-        public MessageWaiter(int code, CountDownLatch latch){
-            this.code = code;
+        public MessageWaiter(CountDownLatch latch, int... codes){
+            this.codes = codes;
             this.latch = latch;
         }
 
@@ -169,7 +169,7 @@ public class MessageUtils {
             try{
                 final Frame candidate = fromMessage(message);
 
-                if(candidate.getCode() == code){
+                if(Arrays.stream(codes).anyMatch(c -> c == candidate.getCode())){
                     frame = candidate;
                     latch.countDown();
                 }
