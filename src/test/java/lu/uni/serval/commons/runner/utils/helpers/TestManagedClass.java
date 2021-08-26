@@ -27,6 +27,7 @@ import org.apache.commons.cli.Option;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Set;
 

@@ -29,16 +29,17 @@ import lu.uni.serval.commons.runner.utils.messaging.activemq.broker.BrokerInfo;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.broker.BrokerUtils;
 import lu.uni.serval.commons.runner.utils.messaging.frame.*;
 import org.apache.activemq.Closeable;
-import org.apache.activemq.ConnectionFailedException;
+import org.apache.activemq.transport.TransportListener;
 import org.apache.commons.cli.*;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.jms.*;
+import java.io.IOException;
 import java.util.Set;
 
-public abstract class ManagedProcess implements Closeable, ExceptionListener, MessageListener {
+public abstract class ManagedProcess implements Closeable, ExceptionListener, MessageListener, TransportListener {
     private static final Logger logger = LogManager.getLogger(ManagedProcess.class);
 
     private String name;
@@ -109,14 +110,14 @@ public abstract class ManagedProcess implements Closeable, ExceptionListener, Me
         BrokerInfo.initialize(brokerUrl);
 
         name = cmd.getOptionValue("name");
-        queueConnection = BrokerUtils.getQueueConnection();
+        queueConnection = BrokerUtils.getQueueConnection(this);
         queueConnection.setExceptionListener(this);
         queueSession = queueConnection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
         final Queue queue = queueSession.createQueue(name);
         final MessageConsumer queueConsumer = queueSession.createConsumer(queue);
         queueConsumer.setMessageListener(this);
 
-        topicConnection = BrokerUtils.getTopicConnection();
+        topicConnection = BrokerUtils.getTopicConnection(this);
         topicConnection.setExceptionListener(this);
         topicSession = topicConnection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
         final Topic topic = topicSession.createTopic(Constants.TOPIC_ADMIN);
@@ -185,7 +186,7 @@ public abstract class ManagedProcess implements Closeable, ExceptionListener, Me
 
     void sendClosingFrame(){
         try{
-            MessageUtils.sendMessageToTopic(name, new ClosingFrame());
+            MessageUtils.sendMessageToTopic(this, name, new ClosingFrame());
         }
         catch (JMSException | NotInitializedException e){
             logger.printf(Level.INFO,
@@ -235,6 +236,28 @@ public abstract class ManagedProcess implements Closeable, ExceptionListener, Me
                     e.getMessage()
             );
         }
+    }
+
+    @Override
+    public void onCommand(Object command) {
+        //ignore
+    }
+
+    @Override
+    public void onException(IOException error) {
+        logger.info("Lost connection to broker: Closing process");
+        stop();
+    }
+
+    @Override
+    public void transportInterupted() {
+        logger.info("Transport interrupted: Closing process");
+        stop();
+    }
+
+    @Override
+    public void transportResumed() {
+        //ignore
     }
 
     protected abstract Set<Option> getOptions();

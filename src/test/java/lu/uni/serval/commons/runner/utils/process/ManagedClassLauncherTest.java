@@ -25,6 +25,7 @@ import lu.uni.serval.commons.runner.utils.exception.AlreadyInitializedException;
 import lu.uni.serval.commons.runner.utils.exception.NotInitializedException;
 import lu.uni.serval.commons.runner.utils.exception.NotStartedException;
 import lu.uni.serval.commons.runner.utils.helpers.TestManagedClass;
+import lu.uni.serval.commons.runner.utils.helpers.TestTransportListener;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.Constants;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.MessageUtils;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.broker.BrokerInfo;
@@ -39,6 +40,7 @@ import org.junit.jupiter.api.Test;
 
 import javax.jms.JMSException;
 import java.io.IOException;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -63,13 +65,15 @@ class ManagedClassLauncherTest {
         final ManagedClassLauncher classLauncher = new ManagedClassLauncher(TestManagedClass.class);
         classLauncher.execute(false);
 
-        final Frame frame = MessageUtils.waitForMessage(classLauncher.getName(), ReadyFrame.CODE);
-        assertEquals(ReadyFrame.CODE, frame.getCode());
+        final Optional<Frame> frame = MessageUtils.waitForMessage(classLauncher.getName(), ReadyFrame.CODE);
+        assertTrue(frame.isPresent());
+        assertEquals(ReadyFrame.CODE, frame.get().getCode());
         assertTrue(classLauncher.isRunning());
 
-        MessageUtils.sendMessageToQueue(classLauncher.getName(), new StopFrame());
-        final Frame closingFrame = MessageUtils.waitForMessage(classLauncher.getName(), ClosingFrame.CODE);
-        assertEquals(ClosingFrame.CODE, closingFrame.getCode());
+        MessageUtils.sendMessageToQueue(new TestTransportListener(), classLauncher.getName(), new StopFrame());
+        final Optional<Frame> closingFrame = MessageUtils.waitForMessage(classLauncher.getName(), ClosingFrame.CODE);
+        assertTrue(closingFrame.isPresent());
+        assertEquals(ClosingFrame.CODE, closingFrame.get().getCode());
     }
 
     @Test
@@ -77,15 +81,17 @@ class ManagedClassLauncherTest {
         final ManagedClassLauncher classLauncher = new ManagedClassLauncher(TestManagedClass.class);
         classLauncher.execute(false);
 
-        final Frame readyFrame = MessageUtils.waitForMessage(classLauncher.getName(), ReadyFrame.CODE);
-        assertEquals(ReadyFrame.CODE, readyFrame.getCode());
+        final Optional<Frame> readyFrame = MessageUtils.waitForMessage(classLauncher.getName(), ReadyFrame.CODE);
+        assertTrue(readyFrame.isPresent());
+        assertEquals(ReadyFrame.CODE, readyFrame.get().getCode());
         assertTrue(classLauncher.isRunning());
         Thread.sleep(500);
         assertTrue(classLauncher.isRunning());
 
-        MessageUtils.sendMessageToTopic(Constants.TOPIC_ADMIN, new StopFrame());
-        final Frame closingFrame = MessageUtils.waitForMessage(classLauncher.getName(), ClosingFrame.CODE);
-        assertEquals(ClosingFrame.CODE, closingFrame.getCode());
+        MessageUtils.sendMessageToTopic(new TestTransportListener(), Constants.TOPIC_ADMIN, new StopFrame());
+        final Optional<Frame> closingFrame = MessageUtils.waitForMessage(classLauncher.getName(), ClosingFrame.CODE);
+        assertTrue(closingFrame.isPresent());
+        assertEquals(ClosingFrame.CODE, closingFrame.get().getCode());
     }
 
     @Test
@@ -93,8 +99,9 @@ class ManagedClassLauncherTest {
         final ManagedClassLauncher classLauncher = new ManagedClassLauncher(TestManagedClass.class);
         classLauncher.execute(false);
 
-        final Frame readyFrame = MessageUtils.waitForMessage(classLauncher.getName(), ReadyFrame.CODE);
-        assertEquals(ReadyFrame.CODE, readyFrame.getCode());
+        final Optional<Frame> readyFrame = MessageUtils.waitForMessage(classLauncher.getName(), ReadyFrame.CODE);
+        assertTrue(readyFrame.isPresent());
+        assertEquals(ReadyFrame.CODE, readyFrame.get().getCode());
         assertTrue(classLauncher.isRunning());
         Thread.sleep(500);
         assertTrue(classLauncher.isRunning());

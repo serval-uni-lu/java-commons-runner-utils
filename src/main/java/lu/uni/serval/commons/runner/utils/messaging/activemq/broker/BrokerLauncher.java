@@ -32,6 +32,7 @@ import lu.uni.serval.commons.runner.utils.messaging.socket.Listener;
 import lu.uni.serval.commons.runner.utils.messaging.socket.processor.FrameProcessor;
 import lu.uni.serval.commons.runner.utils.messaging.socket.processor.FrameProcessorFactory;
 import lu.uni.serval.commons.runner.utils.process.ClassLauncher;
+import org.apache.activemq.transport.TransportListener;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -45,7 +46,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-public class BrokerLauncher implements Closeable, Runnable, FrameProcessorFactory, MessageListener, ExceptionListener {
+public class BrokerLauncher implements Closeable, Runnable, FrameProcessorFactory, MessageListener, ExceptionListener, TransportListener {
     private static final Logger logger = LogManager.getLogger(BrokerLauncher.class);
 
     private final String name;
@@ -58,10 +59,14 @@ public class BrokerLauncher implements Closeable, Runnable, FrameProcessorFactor
 
     private TopicConnection topicConnection;
     private TopicSession topicSession;
+    private final Object connectionLock;
+    private boolean isConnected;
 
     public BrokerLauncher(String name) throws IOException, NotInitializedException {
         this.name = name;
 
+        this.isConnected = false;
+        this.connectionLock = new Object();
         this.readyRunnables = new HashSet<>();
         this.stopRunnables = new HashSet<>();
         this.exceptionConsumers = new HashSet<>();
@@ -110,8 +115,8 @@ public class BrokerLauncher implements Closeable, Runnable, FrameProcessorFactor
     public void close(){
         try {
             if(launcher.isRunning()){
-                MessageUtils.sendMessageToTopic(Constants.TOPIC_ADMIN, new StopFrame());
-                MessageUtils.sendMessageToQueue(this.name, new StopFrame());
+                MessageUtils.sendMessageToTopic(this, Constants.TOPIC_ADMIN, new StopFrame());
+                MessageUtils.sendMessageToQueue(this, this.name, new StopFrame());
             }
         } catch (JMSException | NotInitializedException e) {
             logger.printf(
@@ -171,9 +176,13 @@ public class BrokerLauncher implements Closeable, Runnable, FrameProcessorFactor
 
         if(ReadyBrokerFrame.CODE == code) return frame -> {
             try {
-                topicConnection = BrokerUtils.getTopicConnection();
-                topicSession = topicConnection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
-                topicConnection.setExceptionListener(this);
+                synchronized (connectionLock){
+                    topicConnection = BrokerUtils.getTopicConnection(this);
+                    topicSession = topicConnection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
+                    topicConnection.setExceptionListener(this);
+                    isConnected = true;
+                }
+
                 final Topic topic = topicSession.createTopic(Constants.TOPIC_ADMIN);
                 final MessageConsumer topicConsumer = topicSession.createConsumer(topic);
                 topicConsumer.setMessageListener(this);
@@ -186,6 +195,8 @@ public class BrokerLauncher implements Closeable, Runnable, FrameProcessorFactor
                         e.getClass().getSimpleName(),
                         e.getMessage()
                 );
+
+                isConnected = false;
             }
 
             return false;
@@ -215,6 +226,21 @@ public class BrokerLauncher implements Closeable, Runnable, FrameProcessorFactor
                     e.getClass().getSimpleName(),
                     e.getMessage()
             );
+        }
+    }
+
+    private void closeTopicConnection(){
+        if(!isConnected){
+            return;
+        }
+
+        synchronized (connectionLock){
+            try {
+                isConnected = false;
+                topicConnection.close();
+            } catch (JMSException e) {
+                //ignore
+            }
         }
     }
 
@@ -248,11 +274,29 @@ public class BrokerLauncher implements Closeable, Runnable, FrameProcessorFactor
     public void onException(JMSException exception) {
         if(exception.getMessage().equals("java.io.EOFException")){
             logger.info("Broker is closing");
-            try {
-                topicConnection.close();
-            } catch (JMSException e) {
-                //ignore
-            }
+            closeTopicConnection();
         }
+    }
+
+    @Override
+    public void onCommand(Object command) {
+        //nothing to do
+    }
+
+    @Override
+    public void onException(IOException error) {
+        logger.info("Broker is closing");
+        closeTopicConnection();
+    }
+
+    @Override
+    public void transportInterupted() {
+        logger.info("Transport was interrupted");
+        closeTopicConnection();
+    }
+
+    @Override
+    public void transportResumed() {
+        logger.info("Transport is resuming");
     }
 }

@@ -26,17 +26,21 @@ import lu.uni.serval.commons.runner.utils.messaging.activemq.broker.BrokerUtils;
 import lu.uni.serval.commons.runner.utils.messaging.frame.Frame;
 import org.apache.activemq.command.ActiveMQQueue;
 import org.apache.activemq.command.ActiveMQTopic;
+import org.apache.activemq.transport.TransportListener;
 
 import javax.jms.*;
+import java.io.IOException;
+import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
 
 public class MessageUtils {
     private MessageUtils() {}
 
-    public static void sendMessageToTopic(String topicName, Frame frame) throws JMSException, NotInitializedException {
+    public static void sendMessageToTopic(TransportListener listener, String topicName, Frame frame) throws JMSException, NotInitializedException {
         TopicConnection connection = null;
 
         try{
-            connection = BrokerUtils.getTopicConnection();
+            connection = BrokerUtils.getTopicConnection(listener);
             sendMessageToTopic(connection, topicName, frame);
         }
         finally {
@@ -67,11 +71,11 @@ public class MessageUtils {
         }
     }
 
-    public static void sendMessageToQueue(String queueName, Frame frame) throws JMSException, NotInitializedException {
+    public static void sendMessageToQueue(TransportListener listener, String queueName, Frame frame) throws JMSException, NotInitializedException {
         QueueConnection connection = null;
 
         try{
-            connection = BrokerUtils.getQueueConnection();
+            connection = BrokerUtils.getQueueConnection(listener);
             sendMessageToQueue(connection, queueName, frame);
         }
         finally {
@@ -102,32 +106,22 @@ public class MessageUtils {
         }
     }
 
-    public static Frame waitForMessage(String topicName, int code) throws JMSException, NotInitializedException {
-        final TopicConnection topicConnection = BrokerUtils.getTopicConnection();
+    public static Optional<Frame> waitForMessage(String topicName, int code) throws JMSException, NotInitializedException, InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(1);
+        final MessageWaiter messageWaiter = new MessageWaiter(code, latch);
 
+        final TopicConnection topicConnection = BrokerUtils.getTopicConnection(messageWaiter);
         final Session session = topicConnection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
         final Destination destination = session.createTopic(topicName);
         final MessageConsumer consumer = session.createConsumer(destination);
+        consumer.setMessageListener(messageWaiter);
 
-        Frame frame = null;
-
-        while (frame == null){
-            try{
-                final Frame candidate = fromMessage(consumer.receive());
-
-                if(candidate.getCode() == code){
-                    frame = candidate;
-                }
-            }
-            catch (Exception ignore) {
-                //ignore
-            }
-        }
+        latch.await();
 
         session.close();
         topicConnection.close();
 
-        return frame;
+        return Optional.ofNullable(messageWaiter.getFrame());
     }
 
     public static Frame fromMessage(final Message message) throws JMSException {
@@ -153,5 +147,56 @@ public class MessageUtils {
 
     public static Message toMessage(final Frame frame, final Session session) throws JMSException {
         return session.createObjectMessage(frame);
+    }
+
+    private static class MessageWaiter implements TransportListener, MessageListener{
+        private final int code;
+        private final CountDownLatch latch;
+
+        private Frame frame;
+
+        public MessageWaiter(int code, CountDownLatch latch){
+            this.code = code;
+            this.latch = latch;
+        }
+
+        public Frame getFrame() {
+            return frame;
+        }
+
+        @Override
+        public void onMessage(Message message) {
+            try{
+                final Frame candidate = fromMessage(message);
+
+                if(candidate.getCode() == code){
+                    frame = candidate;
+                    latch.countDown();
+                }
+            }
+            catch (Exception ignore) {
+                //ignore
+            }
+        }
+
+        @Override
+        public void onCommand(Object command) {
+            //ignore
+        }
+
+        @Override
+        public void onException(IOException error) {
+            latch.countDown();
+        }
+
+        @Override
+        public void transportInterupted() {
+            latch.countDown();
+        }
+
+        @Override
+        public void transportResumed() {
+            //ignore
+        }
     }
 }

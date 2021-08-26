@@ -23,6 +23,7 @@ package lu.uni.serval.commons.runner.utils.messaging.activemq.broker;
 
 import lu.uni.serval.commons.runner.utils.exception.NotInitializedException;
 import org.apache.activemq.ActiveMQConnectionFactory;
+import org.apache.activemq.transport.TransportListener;
 
 import javax.jms.*;
 import java.util.*;
@@ -30,10 +31,11 @@ import java.util.*;
 public class BrokerUtils {
     private BrokerUtils() {}
 
-    public static QueueConnection getQueueConnection(String... trustedPackages) throws JMSException, NotInitializedException {
+    public static QueueConnection getQueueConnection(TransportListener listener, String... trustedPackages) throws JMSException, NotInitializedException {
         final String brokerUrl = BrokerInfo.url();
 
         final ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory(brokerUrl);
+        connectionFactory.setTransportListener(listener);
         connectionFactory.setTrustedPackages(getTrustedPackages(trustedPackages));
 
         final QueueConnection connection = connectionFactory.createQueueConnection();
@@ -42,10 +44,11 @@ public class BrokerUtils {
         return connection;
     }
 
-    public static TopicConnection getTopicConnection(String... trustedPackages) throws JMSException, NotInitializedException {
+    public static TopicConnection getTopicConnection(TransportListener listener, String... trustedPackages) throws JMSException, NotInitializedException {
         final String brokerUrl = BrokerInfo.url();
 
         final ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory(brokerUrl);
+        connectionFactory.setTransportListener(listener);
         connectionFactory.setTrustedPackages(getTrustedPackages(trustedPackages));
 
         final TopicConnection connection = connectionFactory.createTopicConnection();

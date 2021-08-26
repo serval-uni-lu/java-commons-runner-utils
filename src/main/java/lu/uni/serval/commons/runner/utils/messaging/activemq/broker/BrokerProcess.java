@@ -27,6 +27,7 @@ import lu.uni.serval.commons.runner.utils.messaging.socket.Sender;
 import org.apache.activemq.broker.BrokerService;
 import org.apache.activemq.broker.region.Destination;
 import org.apache.activemq.broker.TransportConnector;
+import org.apache.activemq.transport.TransportListener;
 import org.apache.activemq.usage.SystemUsage;
 import org.apache.commons.cli.*;
 import org.apache.logging.log4j.Level;
@@ -38,11 +39,12 @@ import java.io.*;
 import java.net.URI;
 import java.util.concurrent.TimeUnit;
 
-public class BrokerProcess implements Closeable, MessageListener {
+public class BrokerProcess implements Closeable, MessageListener, TransportListener, ExceptionListener {
     private static final Logger logger = LogManager.getLogger(BrokerProcess.class);
     private static final long STORAGE_LIMIT = 1024L * 1024L * 8L;
 
     private final BrokerService service;
+    private final Object serviceLock;
     private final QueueConnection queueConnection;
     private final QueueSession queueSession;
     private final MessageConsumer queueConsumer;
@@ -99,24 +101,28 @@ public class BrokerProcess implements Closeable, MessageListener {
     }
 
     private BrokerProcess(String bindAddress, String name) throws Exception {
-        service = new BrokerService();
-        service.setBrokerName(name);
+        serviceLock = new Object();
 
-        service.setPersistent(false);
-        service.setUseJmx(false);
+        synchronized (serviceLock){
+            service = new BrokerService();
+            service.setBrokerName(name);
 
-        SystemUsage systemUsage = service.getSystemUsage();
-        systemUsage.getStoreUsage().setLimit(STORAGE_LIMIT);
-        systemUsage.getTempUsage().setLimit(STORAGE_LIMIT);
+            service.setPersistent(false);
+            service.setUseJmx(false);
 
-        TransportConnector connector = new TransportConnector();
-        connector.setUri(new URI(bindAddress));
-        service.addConnector(connector);
+            SystemUsage systemUsage = service.getSystemUsage();
+            systemUsage.getStoreUsage().setLimit(STORAGE_LIMIT);
+            systemUsage.getTempUsage().setLimit(STORAGE_LIMIT);
 
-        this.service.start();
-        this.service.waitUntilStarted();
+            TransportConnector connector = new TransportConnector();
+            connector.setUri(new URI(bindAddress));
+            service.addConnector(connector);
 
-        queueConnection = BrokerUtils.getQueueConnection("lu.uni.serval.commons.runner.utils.messaging.frame");
+            this.service.start();
+            this.service.waitUntilStarted();
+        }
+
+        queueConnection = BrokerUtils.getQueueConnection(this, "lu.uni.serval.commons.runner.utils.messaging.frame");
         queueSession = queueConnection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
         final Queue queue = queueSession.createQueue(name);
         queueConsumer = queueSession.createConsumer(queue);
@@ -125,20 +131,22 @@ public class BrokerProcess implements Closeable, MessageListener {
 
     @Override
     public void close() {
-        if(this.service != null){
-            try {
-                waitOnPendingMessages(200, 100);
-                this.queueConsumer.close();
-                this.queueSession.close();
-                this.queueConnection.close();
-                this.service.stop();
-            } catch (Exception e) {
-                logger.printf(
-                        Level.ERROR,
-                        "Failed to properly close broker: [%s] %s",
-                        e.getClass().getSimpleName(),
-                        e.getMessage()
-                );
+        synchronized (serviceLock){
+            if(this.service.isStarted()){
+                try {
+                    waitOnPendingMessages(200, 100);
+                    this.queueConsumer.close();
+                    this.queueSession.close();
+                    this.queueConnection.close();
+                    this.service.stop();
+                } catch (Exception e) {
+                    logger.printf(
+                            Level.ERROR,
+                            "Failed to properly close broker: [%s] %s",
+                            e.getClass().getSimpleName(),
+                            e.getMessage()
+                    );
+                }
             }
         }
     }
@@ -187,5 +195,45 @@ public class BrokerProcess implements Closeable, MessageListener {
                     e.getMessage()
             );
         }
+    }
+
+    @Override
+    public void onCommand(Object command) {
+        //ignore
+    }
+
+    @Override
+    public void onException(IOException e) {
+        logger.printf(
+                Level.ERROR,
+                "Exception raised in Broker Process: [%s] %s",
+                e.getClass().getSimpleName(),
+                e.getMessage()
+        );
+
+        close();
+    }
+
+    @Override
+    public void transportInterupted() {
+        logger.info("Transport Interrupted: Closing connection");
+        close();
+    }
+
+    @Override
+    public void transportResumed() {
+        //ignore
+    }
+
+    @Override
+    public void onException(JMSException e) {
+        logger.printf(
+                Level.ERROR,
+                "Exception raised in Broker Process: [%s] %s",
+                e.getClass().getSimpleName(),
+                e.getMessage()
+        );
+
+        close();
     }
 }

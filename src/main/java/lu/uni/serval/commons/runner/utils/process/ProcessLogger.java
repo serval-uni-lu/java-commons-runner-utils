@@ -41,10 +41,11 @@ public class ProcessLogger extends Listener{
 
     @Override
     protected boolean onMessageReceived(String line) {
-        logger.debug(line);
-
         if(line.contains("ERROR")){
             logger.printf(Level.ERROR, " [process:%s] %s", name, line);
+        }
+        else{
+            logger.printf(Level.DEBUG, " [process:%s] %s", name, line);
         }
 
         return true;
