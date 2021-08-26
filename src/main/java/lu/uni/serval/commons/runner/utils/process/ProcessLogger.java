@@ -53,7 +53,7 @@ public class ProcessLogger extends Listener{
 
     @Override
     protected void onEndListening() {
-        logger.printf(Level.INFO,"Process '%s' is ready to terminated", name);
+        logger.printf(Level.INFO,"Process '%s' is ready to terminate", name);
     }
 
     @Override
