@@ -1,9 +1,9 @@
 # Runner Utils
 
-![build](https://github.com/UL-SnT-Serval/json-aggregator/workflows/build/badge.svg)
-![codecov](.github/badges/jacoco.svg)
+![Build Status](https://github.com/UL-SnT-Serval/json-aggregator/workflows/build/badge.svg)
+![Code Coverage](.github/badges/jacoco.svg)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/lu.uni.serval/commons-runner-utils/badge.svg)](https://search.maven.org/search?q=g:lu.uni.serval%20commons-runner-utils)
 ## Description
 
 Runner Utils is a library to execute and coordinate processes from within the JVM.
