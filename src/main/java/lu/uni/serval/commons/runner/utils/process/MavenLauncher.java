@@ -75,6 +75,16 @@ public class MavenLauncher extends JavaLauncher {
         return this;
     }
 
+    public MavenLauncher withLongNameParameter(String name, String value){
+        addLongNameParameter(new Entry(name, value));
+        return this;
+    }
+
+    public MavenLauncher withShortNameParameter(String name, String value){
+        addShortNameParameter(new Entry(name, value));
+        return this;
+    }
+
     public MavenLauncher usingProfile(List<String> profiles){
         this.profiles.addAll(profiles);
         return this;
