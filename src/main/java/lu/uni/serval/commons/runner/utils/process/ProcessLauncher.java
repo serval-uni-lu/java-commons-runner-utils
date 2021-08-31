@@ -66,7 +66,7 @@ public abstract class ProcessLauncher {
         setDirectory(builder);
         setCommand(builder);
 
-        logger.printf(Level.DEBUG, "Execute command: %s", String.join(" ", builder.command()));
+        logger.printf(Level.INFO, "Execute command: %s", String.join(" ", builder.command()));
 
         process = builder.start();
         startListeners(process);
