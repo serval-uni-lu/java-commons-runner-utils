@@ -143,8 +143,7 @@ public class MavenLauncher extends JavaLauncher {
         command.addAll(getParameters());
 
         if(!profiles.isEmpty()){
-            command.add("-P");
-            command.add(String.join(",", profiles));
+            command.add(String.format("-P%s", String.join(",", profiles)));
         }
 
         return command;
