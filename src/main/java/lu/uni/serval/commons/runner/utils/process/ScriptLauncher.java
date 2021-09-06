@@ -21,6 +21,7 @@ package lu.uni.serval.commons.runner.utils.process;
  */
 
 
+import lu.uni.serval.commons.runner.utils.configuration.Entry;
 import lu.uni.serval.commons.runner.utils.os.OsUtils;
 
 import java.io.File;
@@ -33,6 +34,11 @@ public class ScriptLauncher extends ProcessLauncher{
         super(name);
         this.command = Arrays.asList(command.split("\\s+"));
         this.directory = directory;
+    }
+
+    public ScriptLauncher withEnvironmentVariable(String name, String value){
+        super.addEnvironmentVariable(new Entry(name, value));
+        return this;
     }
 
     @Override
