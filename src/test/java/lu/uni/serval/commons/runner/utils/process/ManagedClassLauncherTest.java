@@ -63,7 +63,7 @@ class ManagedClassLauncherTest {
     @Test
     void stopProcessUsingQueue() throws IOException, InterruptedException, JMSException, NotInitializedException {
         final ManagedClassLauncher classLauncher = new ManagedClassLauncher(TestManagedClass.class);
-        classLauncher.execute(false);
+        classLauncher.executeAsync();
 
         final Optional<Frame> frame = MessageUtils.waitForMessage(classLauncher.getName(), ReadyFrame.CODE);
         assertTrue(frame.isPresent());
@@ -79,7 +79,7 @@ class ManagedClassLauncherTest {
     @Test
     void stopProcessUsingAdminTopic() throws IOException, InterruptedException, JMSException, NotInitializedException {
         final ManagedClassLauncher classLauncher = new ManagedClassLauncher(TestManagedClass.class);
-        classLauncher.execute(false);
+        classLauncher.executeAsync();
 
         final Optional<Frame> readyFrame = MessageUtils.waitForMessage(classLauncher.getName(), ReadyFrame.CODE);
         assertTrue(readyFrame.isPresent());
@@ -97,7 +97,7 @@ class ManagedClassLauncherTest {
     @Test
     void forciblyKillProcess() throws IOException, InterruptedException, JMSException, NotInitializedException {
         final ManagedClassLauncher classLauncher = new ManagedClassLauncher(TestManagedClass.class);
-        classLauncher.execute(false);
+        classLauncher.executeAsync();
 
         final Optional<Frame> readyFrame = MessageUtils.waitForMessage(classLauncher.getName(), ReadyFrame.CODE);
         assertTrue(readyFrame.isPresent());

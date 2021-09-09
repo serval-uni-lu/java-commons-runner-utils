@@ -83,13 +83,13 @@ public class BrokerLauncher implements Closeable, Runnable, FrameProcessorFactor
         return name;
     }
 
-    public void execute() throws IOException, InterruptedException {
-        launcher.execute(false);
+    public void execute() throws IOException {
+        launcher.executeAsync();
         new Thread(this).start();
     }
 
     public void executeAndWaitForReady() throws IOException, InterruptedException, NotStartedException {
-        launcher.execute(false);
+        launcher.executeAsync();
         new Thread(this).start();
 
         final Awaiter awaiter = new Awaiter();

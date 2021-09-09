@@ -25,6 +25,7 @@ import lu.uni.serval.commons.runner.utils.helpers.SimpleLaunchableClass;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -35,7 +36,7 @@ class ClassLauncherTest {
         final ClassLauncher classLauncher = new ClassLauncher(SimpleLaunchableClass.class);
 
         classLauncher.addListener(stringLogger);
-        classLauncher.execute(true);
+        classLauncher.executeSync(20, TimeUnit.SECONDS);
 
         assertEquals("Hello from process with arguments: []", stringLogger.getOut().trim());
         assertEquals("", stringLogger.getErr().trim());

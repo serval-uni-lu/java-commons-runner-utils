@@ -63,9 +63,9 @@ class BrokerLauncherTest {
 
         try(final BrokerLauncher brokerLauncher = new BrokerLauncher("testBroker")){
             brokerLauncher.executeAndWaitForReady();
-            launcher.execute(false);
+            launcher.executeAsync();
             // give time for the process to properly start
-            Thread.sleep(3000);
+            Thread.sleep(1000);
             assertTrue(launcher.isRunning());
         }
 

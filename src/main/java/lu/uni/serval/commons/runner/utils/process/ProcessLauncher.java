@@ -30,6 +30,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public abstract class ProcessLauncher {
     private static final Logger logger = LogManager.getLogger(ProcessLauncher.class);
@@ -57,7 +58,16 @@ public abstract class ProcessLauncher {
         environmentVariables.add(entry);
     }
 
-    public void execute(boolean isSynchronous) throws IOException, InterruptedException {
+    public void executeSync(int timeout, TimeUnit timeUnit) throws IOException, InterruptedException {
+        execute();
+        processLogger.join(TimeUnit.MILLISECONDS.convert(timeout, timeUnit));
+    }
+
+    public void executeAsync() throws IOException {
+        execute();
+    }
+
+    private void execute() throws IOException {
         final ProcessBuilder builder = new ProcessBuilder();
 
         builder.redirectErrorStream(true);
@@ -70,10 +80,6 @@ public abstract class ProcessLauncher {
 
         process = builder.start();
         startListeners(process);
-
-        if(isSynchronous){
-            processLogger.join();
-        }
     }
 
     private void setEnvironment(ProcessBuilder builder){
