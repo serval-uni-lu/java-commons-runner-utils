@@ -78,10 +78,11 @@ public abstract class JavaLauncher extends ProcessLauncher {
 
     @Override
     protected Map<String, String> getEnvironment(){
-        Map<String, String> localEnv = super.getEnvironment();
+        final Map<String, String> localEnv = super.getEnvironment();
 
         if(javaHome != null && javaHome.exists()){
             localEnv.put("JAVA_HOME", javaHome.getAbsolutePath());
+            addPath(new File(javaHome, "bin"));
         }
 
         return localEnv;

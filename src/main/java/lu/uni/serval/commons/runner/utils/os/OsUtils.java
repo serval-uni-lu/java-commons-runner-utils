@@ -48,4 +48,15 @@ public class OsUtils {
 
         return tmpFolder;
     }
+
+    public static String addValueToPath(String path, String value){
+        String delimiter = "";
+        path = path == null ? "" : path;
+
+        if(!path.trim().isEmpty()){
+            delimiter = isWindows() ? ";" : ":";
+        }
+
+        return value + delimiter + path;
+    }
 }

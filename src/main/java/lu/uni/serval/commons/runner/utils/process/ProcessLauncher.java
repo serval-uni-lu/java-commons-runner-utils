@@ -23,6 +23,7 @@ package lu.uni.serval.commons.runner.utils.process;
 
 import lu.uni.serval.commons.runner.utils.configuration.Entries;
 import lu.uni.serval.commons.runner.utils.configuration.Entry;
+import lu.uni.serval.commons.runner.utils.os.OsUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,6 +41,7 @@ public abstract class ProcessLauncher {
     private final Entries environmentVariables = new Entries();
     private Process process;
     private final Set<Listener> listeners = new HashSet<>();
+    private final List<File> paths = new ArrayList<>();
 
     protected ProcessLauncher(String name) {
         processLogger = new ProcessLogger(name);
@@ -52,6 +54,10 @@ public abstract class ProcessLauncher {
 
     protected void addEnvironmentVariables(Entries entries){
         environmentVariables.putAll(entries);
+    }
+
+    protected void addPath(File path){
+        paths.add(path);
     }
 
     public void addEnvironmentVariable(Entry entry){
@@ -83,8 +89,16 @@ public abstract class ProcessLauncher {
     }
 
     private void setEnvironment(ProcessBuilder builder){
-        Map<String, String> localEnv = builder.environment();
+        final Map<String, String> localEnv = builder.environment();
         localEnv.putAll(getEnvironment());
+
+        if(!paths.isEmpty()){
+            final String path = paths.stream()
+                    .map(File::getAbsolutePath)
+                    .reduce(localEnv.get("PATH"), OsUtils::addValueToPath);
+
+            localEnv.put("PATH", path);
+        }
     }
 
     private void setDirectory(ProcessBuilder builder){
