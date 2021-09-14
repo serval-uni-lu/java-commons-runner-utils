@@ -82,7 +82,7 @@ public abstract class JavaLauncher extends ProcessLauncher {
 
         if(javaHome != null && javaHome.exists()){
             localEnv.put("JAVA_HOME", javaHome.getAbsolutePath());
-            addPath(new File(javaHome, "bin"));
+            addPathEntry(new File(javaHome, "bin"));
         }
 
         return localEnv;

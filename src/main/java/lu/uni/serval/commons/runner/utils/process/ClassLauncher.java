@@ -23,6 +23,7 @@ package lu.uni.serval.commons.runner.utils.process;
 
 import lu.uni.serval.commons.runner.utils.configuration.Entry;
 
+import java.io.File;
 import java.util.*;
 
 public class ClassLauncher extends JavaLauncher {
@@ -31,6 +32,11 @@ public class ClassLauncher extends JavaLauncher {
     public ClassLauncher(final Class<?> classLaunched) {
         super(classLaunched.getName());
         this.classLaunched = classLaunched;
+    }
+
+    public ClassLauncher withPathEntry(File pathEntry){
+        addPathEntry(pathEntry);
+        return this;
     }
 
     public ClassLauncher withJavaParameter(String name, String value){

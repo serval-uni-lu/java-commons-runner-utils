@@ -49,6 +49,11 @@ public class ScriptLauncher extends ProcessLauncher{
         return this;
     }
 
+    public ScriptLauncher withPathEntry(File pathEntry){
+        addPathEntry(pathEntry);
+        return this;
+    }
+
     @Override
     protected List<String> getCommand() {
         final List<String> processCommand = new ArrayList<>();

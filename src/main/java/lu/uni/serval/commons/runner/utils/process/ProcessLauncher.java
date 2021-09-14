@@ -56,8 +56,8 @@ public abstract class ProcessLauncher {
         environmentVariables.putAll(entries);
     }
 
-    public void addPath(File path){
-        paths.add(path);
+    protected void addPathEntry(File pathEntry){
+        paths.add(pathEntry);
     }
 
     public void addEnvironmentVariable(Entry entry){

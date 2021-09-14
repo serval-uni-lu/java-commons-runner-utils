@@ -55,7 +55,7 @@ class ClassLauncherTest {
         final ClassLauncher classLauncher = new ClassLauncher(PrintPathClass.class);
 
         classLauncher.addListener(stringLogger);
-        classLauncher.addPath(path);
+        classLauncher.addPathEntry(path);
         classLauncher.executeSync(20, TimeUnit.SECONDS);
 
         System.out.println(stringLogger.getOut());
