@@ -56,7 +56,7 @@ public abstract class ProcessLauncher {
         environmentVariables.putAll(entries);
     }
 
-    protected void addPath(File path){
+    public void addPath(File path){
         paths.add(path);
     }
 
@@ -67,6 +67,7 @@ public abstract class ProcessLauncher {
     public void executeSync(int timeout, TimeUnit timeUnit) throws IOException, InterruptedException {
         execute();
         processLogger.join(TimeUnit.MILLISECONDS.convert(timeout, timeUnit));
+        kill();
     }
 
     public void executeAsync() throws IOException {
@@ -95,9 +96,9 @@ public abstract class ProcessLauncher {
         if(!paths.isEmpty()){
             final String path = paths.stream()
                     .map(File::getAbsolutePath)
-                    .reduce(localEnv.get("PATH"), OsUtils::addValueToPath);
+                    .reduce(localEnv.get(OsUtils.PATH), OsUtils::addValueToPath);
 
-            localEnv.put("PATH", path);
+            localEnv.put(OsUtils.PATH, path);
         }
     }
 

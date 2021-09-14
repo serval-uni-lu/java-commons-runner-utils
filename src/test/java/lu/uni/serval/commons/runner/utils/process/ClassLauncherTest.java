@@ -21,17 +21,21 @@ package lu.uni.serval.commons.runner.utils.process;
  */
 
 
-import lu.uni.serval.commons.runner.utils.helpers.SimpleLaunchableClass;
+import lu.uni.serval.commons.runner.utils.helpers.*;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class ClassLauncherTest {
     @Test
-    void launchProcessFromClass() throws IOException, InterruptedException {
+    void testLaunchProcessFromClass() throws IOException, InterruptedException {
         final StringLogger stringLogger = new StringLogger();
         final ClassLauncher classLauncher = new ClassLauncher(SimpleLaunchableClass.class);
 
@@ -40,5 +44,30 @@ class ClassLauncherTest {
 
         assertEquals("Hello from process with arguments: []", stringLogger.getOut().trim());
         assertEquals("", stringLogger.getErr().trim());
+    }
+
+    @Test
+    void testAddToPathEnv() throws URISyntaxException, IOException, InterruptedException {
+        final URL resourceUrl = Helpers.class.getClassLoader().getResource("configurations");
+        final File path = Paths.get(resourceUrl.toURI()).toFile();
+
+        final StringLogger stringLogger = new StringLogger();
+        final ClassLauncher classLauncher = new ClassLauncher(PrintPathClass.class);
+
+        classLauncher.addListener(stringLogger);
+        classLauncher.addPath(path);
+        classLauncher.executeSync(20, TimeUnit.SECONDS);
+
+        System.out.println(stringLogger.getOut());
+
+        assertTrue(stringLogger.getOut().contains(path.getAbsolutePath()));
+        assertEquals("", stringLogger.getErr().trim());
+    }
+
+    @Test
+    void testTimeout() throws IOException, InterruptedException {
+        final ClassLauncher classLauncher = new ClassLauncher(InfiniteClass.class);
+        classLauncher.executeSync(1, TimeUnit.SECONDS);
+        assertFalse(classLauncher.isRunning());
     }
 }

@@ -120,7 +120,6 @@ public class MavenLauncher extends JavaLauncher {
             localEnv.put("MAVEN_OPTS", formattedMavenOptions);
         }
 
-
         final String formattedJavaToolOptions = javaToolOptions.stream()
                 .map(e -> e.format("-D", ":"))
                 .collect(Collectors.joining(" "));

@@ -30,6 +30,7 @@ public class OsUtils {
     private OsUtils() {}
 
     private static final String OS  = System.getProperty("os.name");
+    public static final String PATH = isWindows() ? "Path" : "PATH";
 
     public static boolean isWindows() {
         return OS.startsWith("Windows");
