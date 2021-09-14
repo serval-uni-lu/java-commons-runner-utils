@@ -41,6 +41,14 @@ public class ScriptLauncher extends ProcessLauncher{
         return this;
     }
 
+    public ScriptLauncher writeOutputTo(File logFile){
+        if(logFile != null){
+            addListener(new FileLogger(logFile, true));
+        }
+
+        return this;
+    }
+
     @Override
     protected List<String> getCommand() {
         final List<String> processCommand = new ArrayList<>();
