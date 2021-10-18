@@ -19,16 +19,6 @@ Runner Utils is a library to execute and coordinate processes from within the JV
 2. Move to the directory.
 3. run the Maven command ```mvn clean install```.
 
-## Getting from Maven Central
-
-```xml
-<dependency>
-  <groupId>lu.uni.serval</groupId>
-  <artifactId>commons-runner-utils</artifactId>
-  <version>0.1.4</version>
-</dependency>
-```
-
 ## License
 
 Code is under the [Apache Licence v2](https://www.apache.org/licenses/LICENSE-2.0.txt).
