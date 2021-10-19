@@ -24,6 +24,7 @@ package lu.uni.serval.commons.runner.utils.messaging.activemq;
 import lu.uni.serval.commons.runner.utils.exception.NotInitializedException;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.broker.BrokerUtils;
 import lu.uni.serval.commons.runner.utils.messaging.frame.Frame;
+import lu.uni.serval.commons.runner.utils.messaging.frame.RequestFrame;
 import org.apache.activemq.command.ActiveMQQueue;
 import org.apache.activemq.command.ActiveMQTopic;
 import org.apache.activemq.transport.TransportListener;
@@ -93,6 +94,8 @@ public class MessageUtils {
         try{
             session = connection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
             producer = session.createProducer(destination);
+            producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+
             producer.send(toMessage(frame, session));
         }
         finally {
@@ -106,9 +109,49 @@ public class MessageUtils {
         }
     }
 
+    public static Frame sendRequestSync(QueueConnection connection, String queueName, RequestFrame requestFrame) throws JMSException, InterruptedException {
+        Frame responseFrame;
+
+        final Destination destination = new ActiveMQQueue(queueName);
+
+        Session session = null;
+        MessageProducer producer = null;
+
+        try{
+            session = connection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
+            producer = session.createProducer(destination);
+            producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+
+            final ResponseWaiter responseWaiter = new ResponseWaiter();
+            final Destination responseDestination = session.createTemporaryQueue();
+            final MessageConsumer responseConsumer = session.createConsumer(responseDestination);
+
+            responseConsumer.setMessageListener(responseWaiter);
+
+            final Message message = toMessage(requestFrame, session);
+            message.setJMSCorrelationID(UUID.randomUUID().toString());
+            message.setJMSReplyTo(responseDestination);
+            producer.send(message);
+
+            responseWaiter.await();
+
+            responseFrame = responseWaiter.getResponseFrame();
+        }
+        finally {
+            if(producer != null){
+                producer.close();
+            }
+
+            if(session != null){
+                session.close();
+            }
+        }
+
+        return responseFrame;
+    }
+
     public static Optional<Frame> waitForMessage(String topicName, int... code) throws JMSException, NotInitializedException, InterruptedException {
-        final CountDownLatch latch = new CountDownLatch(1);
-        final MessageWaiter messageWaiter = new MessageWaiter(latch, code);
+        final MessageWaiter messageWaiter = new MessageWaiter(code);
 
         final TopicConnection topicConnection = BrokerUtils.getTopicConnection(messageWaiter);
         final Session session = topicConnection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -116,7 +159,7 @@ public class MessageUtils {
         final MessageConsumer consumer = session.createConsumer(destination);
         consumer.setMessageListener(messageWaiter);
 
-        latch.await();
+        messageWaiter.await();
 
         session.close();
         topicConnection.close();
@@ -129,7 +172,13 @@ public class MessageUtils {
             final Object object = ((ObjectMessage)message).getObject();
 
             if(Frame.class.isAssignableFrom(object.getClass())){
-                return (Frame)object;
+                final Frame frame = (Frame)object;
+
+                if(RequestFrame.class.isAssignableFrom(object.getClass())){
+                    ((RequestFrame)frame).setMessage(message);
+                }
+
+                return frame;
             }
             else {
                 throw new JMSException(String.format(
@@ -151,17 +200,20 @@ public class MessageUtils {
 
     private static class MessageWaiter implements TransportListener, MessageListener{
         private final int[] codes;
-        private final CountDownLatch latch;
+        private final CountDownLatch latch = new CountDownLatch(1);
 
         private Frame frame;
 
-        public MessageWaiter(CountDownLatch latch, int... codes){
+        public MessageWaiter(int... codes){
             this.codes = codes;
-            this.latch = latch;
         }
 
         public Frame getFrame() {
             return frame;
+        }
+
+        public void await() throws InterruptedException {
+            latch.await();
         }
 
         @Override
@@ -197,6 +249,30 @@ public class MessageUtils {
         @Override
         public void transportResumed() {
             //ignore
+        }
+    }
+
+    private static class ResponseWaiter implements MessageListener {
+        private final CountDownLatch latch = new CountDownLatch(1);
+        private Frame responseFrame = null;
+
+        @Override
+        public void onMessage(Message message) {
+            latch.countDown();
+
+            try {
+                responseFrame = fromMessage(message);
+            } catch (JMSException e) {
+                e.printStackTrace();
+            }
+        }
+
+        public Frame getResponseFrame() {
+            return responseFrame;
+        }
+
+        public void await() throws InterruptedException {
+            latch.await();
         }
     }
 }
