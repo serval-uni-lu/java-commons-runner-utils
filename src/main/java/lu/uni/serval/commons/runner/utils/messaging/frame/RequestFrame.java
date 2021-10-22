@@ -58,6 +58,10 @@ public class RequestFrame<T extends Frame> implements Frame {
         return Optional.of(options.getProperty(key));
     }
 
+    public String listOptions(){
+        return String.join(",", options.stringPropertyNames());
+    }
+
     public Message getMessage() {
         return message;
     }

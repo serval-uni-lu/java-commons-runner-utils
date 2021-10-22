@@ -44,7 +44,7 @@ public class RequestClass extends ManagedProcess {
         } catch (Exception e) {
             logger.printf(
                     Level.ERROR,
-                    "Error occurred when in the transaction: [%s]%s",
+                    "[%s]%s",
                     e.getClass().getSimpleName(),
                     e.getMessage()
             );

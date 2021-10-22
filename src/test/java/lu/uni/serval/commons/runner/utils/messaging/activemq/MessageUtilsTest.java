@@ -47,6 +47,22 @@ class MessageUtilsTest {
         requestProcess.addListener(requestProcessOutput);
         requestProcess.executeSync(15, TimeUnit.SECONDS);
 
-        assertEquals("tseTyM", requestProcessOutput.getOut().trim());
+        assertTrue(requestProcessOutput.getOut().contains("tseTyM"));
+    }
+
+    @Test
+    void testWaitForResponseWithException() throws NotInitializedException, IOException, InterruptedException {
+        final ManagedClassLauncher responseProcess = new ManagedClassLauncher(ResponseClass.class);
+        responseProcess.withLongNameParameter("isError", "true");
+        responseProcess.executeAsync();
+
+        final ManagedClassLauncher requestProcess = new ManagedClassLauncher(RequestClass.class);
+        final StringLogger requestProcessOutput = new StringLogger();
+        requestProcess.withLongNameParameter("text", "MyTest");
+        requestProcess.withLongNameParameter("workerQueueName", responseProcess.getName());
+        requestProcess.addListener(requestProcessOutput);
+        requestProcess.executeSync(15, TimeUnit.SECONDS);
+
+        assertTrue(requestProcessOutput.getOut().contains("[ResponseException]Forced exception"));
     }
 }

@@ -171,7 +171,7 @@ public class MessageUtils {
         if(responseFrame == null){
             throw new InvalidFrameException("Response Frame null instead of " + requestFrame.getTarget().getCanonicalName());
         }
-        if(ErrorFrame.CODE == responseFrame.getCode()){
+        else if(responseFrame instanceof ErrorFrame){
             final ErrorFrame errorFrame = (ErrorFrame)responseFrame;
             throw new ResponseException(errorFrame.getType(), errorFrame.getMessage());
         }
