@@ -33,6 +33,8 @@ import javax.jms.*;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class MessageUtils {
     private MessageUtils() {}
@@ -109,7 +111,24 @@ public class MessageUtils {
         }
     }
 
-    public static Frame sendRequestSync(QueueConnection connection, String queueName, RequestFrame requestFrame) throws JMSException, InterruptedException {
+    public static Frame sendRequestSync(TransportListener listener, String queueName, RequestFrame requestFrame, long timeout, TimeUnit timeUnit) throws JMSException, NotInitializedException, InterruptedException, TimeoutException {
+        Frame responseFrame;
+        QueueConnection connection = null;
+
+        try{
+            connection = BrokerUtils.getQueueConnection(listener);
+            responseFrame = sendRequestSync(connection, queueName, requestFrame, timeout, timeUnit);
+        }
+        finally {
+            if(connection != null){
+                connection.close();
+            }
+        }
+
+        return responseFrame;
+    }
+
+    public static Frame sendRequestSync(QueueConnection connection, String queueName, RequestFrame requestFrame, long timeout, TimeUnit timeUnit) throws JMSException, InterruptedException, TimeoutException {
         Frame responseFrame;
 
         final Destination destination = new ActiveMQQueue(queueName);
@@ -133,7 +152,7 @@ public class MessageUtils {
             message.setJMSReplyTo(responseDestination);
             producer.send(message);
 
-            responseWaiter.await();
+            responseWaiter.await(timeout, timeUnit);
 
             responseFrame = responseWaiter.getResponseFrame();
         }
@@ -271,8 +290,10 @@ public class MessageUtils {
             return responseFrame;
         }
 
-        public void await() throws InterruptedException {
-            latch.await();
+        public void await(long timeout, TimeUnit timeUnit) throws InterruptedException, TimeoutException {
+            if(!latch.await(timeout, timeUnit)){
+                throw new TimeoutException("Response waiter ran out of time");
+            }
         }
     }
 }

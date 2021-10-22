@@ -69,6 +69,7 @@ public class FileLogger extends Listener {
             try {
                 writer.write(string);
                 if(returnToLine) writer.newLine();
+                writer.flush();
             } catch (IOException e) {
                 logger.error(String.format("Failed to write text '%s' to file '%s': [%s] %s",
                         string,
