@@ -40,7 +40,7 @@ public class RequestClass extends ManagedProcess {
 
         try {
             final TextFrame responseFrame = MessageUtils.sendRequestSync(this, cmd.getOptionValue("workerQueueName"), requestFrame, 5, TimeUnit.SECONDS);
-            sendMessageToQueue(cmd.getOptionValue("testQueueName"), responseFrame);
+            System.out.println(responseFrame.getText());
         } catch (Exception e) {
             logger.printf(
                     Level.ERROR,

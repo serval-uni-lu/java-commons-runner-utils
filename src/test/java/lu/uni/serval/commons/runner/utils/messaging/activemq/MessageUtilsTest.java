@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MessageUtilsTest {
@@ -36,20 +37,16 @@ class MessageUtilsTest {
 
     @Test
     void testWaitForResponse() throws NotInitializedException, IOException, InterruptedException {
-        final StringLogger stringLogger = new StringLogger();
         final ManagedClassLauncher responseProcess = new ManagedClassLauncher(ResponseClass.class);
-        responseProcess.addListener(stringLogger);
         responseProcess.executeAsync();
 
         final ManagedClassLauncher requestProcess = new ManagedClassLauncher(RequestClass.class);
-
-        requestProcess.withLongNameParameter("text", "Some Text To Invert");
+        final StringLogger requestProcessOutput = new StringLogger();
+        requestProcess.withLongNameParameter("text", "MyTest");
         requestProcess.withLongNameParameter("workerQueueName", responseProcess.getName());
+        requestProcess.addListener(requestProcessOutput);
         requestProcess.executeSync(15, TimeUnit.SECONDS);
 
-        System.err.println(stringLogger.getOut());
-        System.err.println(stringLogger.getErr());
-
-        assertTrue(stringLogger.getOut().contains("trevnI oT txeT emoS"));
+        assertEquals("tseTyM", requestProcessOutput.getOut().trim());
     }
 }

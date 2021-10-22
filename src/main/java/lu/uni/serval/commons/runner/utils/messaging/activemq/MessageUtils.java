@@ -156,7 +156,6 @@ public class MessageUtils {
             producer.send(message);
 
             responseWaiter.await(timeout, timeUnit);
-
             responseFrame = responseWaiter.getResponseFrame();
         }
         finally {
@@ -317,19 +316,24 @@ public class MessageUtils {
     private static class ResponseWaiter implements MessageListener {
         private final CountDownLatch latch = new CountDownLatch(1);
         private Frame responseFrame = null;
+        private JMSException jmsException = null;
 
         @Override
         public void onMessage(Message message) {
-            latch.countDown();
-
             try {
                 responseFrame = fromMessage(message);
             } catch (JMSException e) {
-                e.printStackTrace();
+                jmsException = e;
             }
+
+            latch.countDown();
         }
 
-        public Frame getResponseFrame() {
+        public Frame getResponseFrame() throws JMSException {
+            if(this.jmsException != null){
+                throw jmsException;
+            }
+
             return responseFrame;
         }
 
