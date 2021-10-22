@@ -21,8 +21,11 @@ package lu.uni.serval.commons.runner.utils.messaging.activemq;
  */
 
 
+import lu.uni.serval.commons.runner.utils.exception.InvalidFrameException;
 import lu.uni.serval.commons.runner.utils.exception.NotInitializedException;
+import lu.uni.serval.commons.runner.utils.exception.ResponseException;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.broker.BrokerUtils;
+import lu.uni.serval.commons.runner.utils.messaging.frame.ErrorFrame;
 import lu.uni.serval.commons.runner.utils.messaging.frame.Frame;
 import lu.uni.serval.commons.runner.utils.messaging.frame.RequestFrame;
 import org.apache.activemq.command.ActiveMQQueue;
@@ -111,8 +114,8 @@ public class MessageUtils {
         }
     }
 
-    public static Frame sendRequestSync(TransportListener listener, String queueName, RequestFrame requestFrame, long timeout, TimeUnit timeUnit) throws JMSException, NotInitializedException, InterruptedException, TimeoutException {
-        Frame responseFrame;
+    public static <T extends Frame> T sendRequestSync(TransportListener listener, String queueName, RequestFrame<T> requestFrame, long timeout, TimeUnit timeUnit) throws JMSException, NotInitializedException, InterruptedException, TimeoutException, ResponseException, InvalidFrameException {
+        T responseFrame;
         QueueConnection connection = null;
 
         try{
@@ -128,7 +131,7 @@ public class MessageUtils {
         return responseFrame;
     }
 
-    public static Frame sendRequestSync(QueueConnection connection, String queueName, RequestFrame requestFrame, long timeout, TimeUnit timeUnit) throws JMSException, InterruptedException, TimeoutException {
+    public static <T extends Frame> T sendRequestSync(QueueConnection connection, String queueName, RequestFrame<T> requestFrame, long timeout, TimeUnit timeUnit) throws JMSException, InterruptedException, TimeoutException, ResponseException, InvalidFrameException {
         Frame responseFrame;
 
         final Destination destination = new ActiveMQQueue(queueName);
@@ -166,7 +169,47 @@ public class MessageUtils {
             }
         }
 
-        return responseFrame;
+        if(responseFrame == null){
+            throw new InvalidFrameException("Response Frame null instead of " + requestFrame.getTarget().getCanonicalName());
+        }
+        if(ErrorFrame.CODE == responseFrame.getCode()){
+            final ErrorFrame errorFrame = (ErrorFrame)responseFrame;
+            throw new ResponseException(errorFrame.getType(), errorFrame.getMessage());
+        }
+        else if (responseFrame.getClass() != requestFrame.getTarget()){
+            throw new InvalidFrameException(String.format(
+                    "Expected frame of type '%s' but got '%s' instead",
+                    requestFrame.getTarget().getCanonicalName(),
+                    responseFrame.getClass().getCanonicalName()
+            ));
+        }
+
+        return (T)responseFrame;
+    }
+
+    public static void sendResponse(QueueConnection connection, Destination destination, Frame frame, String correlationId) throws JMSException {
+        Session session = null;
+        MessageProducer producer = null;
+
+        try{
+            session = connection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
+            producer = session.createProducer(destination);
+            producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+
+            final Message message = toMessage(frame, session);
+            message.setJMSCorrelationID(correlationId);
+
+            producer.send(message);
+        }
+        finally {
+            if(producer != null){
+                producer.close();
+            }
+
+            if(session != null){
+                session.close();
+            }
+        }
     }
 
     public static Optional<Frame> waitForMessage(String topicName, int... code) throws JMSException, NotInitializedException, InterruptedException {
@@ -193,8 +236,8 @@ public class MessageUtils {
             if(Frame.class.isAssignableFrom(object.getClass())){
                 final Frame frame = (Frame)object;
 
-                if(RequestFrame.class.isAssignableFrom(object.getClass())){
-                    ((RequestFrame)frame).setMessage(message);
+                if(RequestFrame.CODE == frame.getCode()){
+                    ((RequestFrame<?>)frame).setMessage(message);
                 }
 
                 return frame;

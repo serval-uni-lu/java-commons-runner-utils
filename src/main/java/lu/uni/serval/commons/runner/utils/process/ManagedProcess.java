@@ -23,6 +23,7 @@ package lu.uni.serval.commons.runner.utils.process;
 
 import lu.uni.serval.commons.runner.utils.exception.AlreadyInitializedException;
 import lu.uni.serval.commons.runner.utils.exception.NotInitializedException;
+import lu.uni.serval.commons.runner.utils.exception.NotSupportedException;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.Constants;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.MessageUtils;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.broker.BrokerInfo;
@@ -65,7 +66,7 @@ public abstract class ManagedProcess implements Closeable, ExceptionListener, Me
         }
         catch (Exception e){
             logger.printf(Level.ERROR,
-                    "Failed to start managed process: [%s] %s",
+                    "Managed process failed: [%s] %s",
                     e.getClass().getSimpleName(),
                     e.getMessage()
             );
@@ -216,9 +217,17 @@ public abstract class ManagedProcess implements Closeable, ExceptionListener, Me
         try {
             if(message instanceof ObjectMessage){
                 final Frame frame = (Frame)((ObjectMessage)message).getObject();
+
                 if(frame.getCode() == StopFrame.CODE){
                     logger.info("Received Stop Message: Closing process");
                     stop();
+                }
+                else if(frame.getCode() == RequestFrame.CODE){
+                    final Frame responseFrame = onRequest((RequestFrame<?>) frame);
+                    MessageUtils.sendResponse(queueConnection, message.getJMSReplyTo(), responseFrame, message.getJMSCorrelationID());
+                }
+                else{
+                    onFrame(frame);
                 }
             }
         } catch (JMSException e) {
@@ -258,6 +267,18 @@ public abstract class ManagedProcess implements Closeable, ExceptionListener, Me
     @Override
     public void transportResumed() {
         //ignore
+    }
+
+    protected void onFrame(Frame frame){
+        //ignore
+    }
+
+    protected Frame onRequest(RequestFrame<?> requestFrame){
+        return new ErrorFrame(NotSupportedException.class, String.format(
+                "Received RequestFrame for '%s', but process '%s' does not support requests",
+                requestFrame.getTarget().getCanonicalName(),
+                getName()
+        ));
     }
 
     protected abstract Set<Option> getOptions();

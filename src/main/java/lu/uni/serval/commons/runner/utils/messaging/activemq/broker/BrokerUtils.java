@@ -58,8 +58,9 @@ public class BrokerUtils {
     }
 
     private static List<String> getTrustedPackages(String... trustedPackages){
-        final List<String> trusted = new ArrayList<>(trustedPackages.length + 1);
+        final List<String> trusted = new ArrayList<>(trustedPackages.length + 2);
         trusted.add("lu.uni.serval");
+        trusted.add("java.util");
         trusted.addAll(Arrays.asList(trustedPackages));
 
         return trusted;

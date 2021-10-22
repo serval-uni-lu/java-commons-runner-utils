@@ -21,18 +21,18 @@ package lu.uni.serval.commons.runner.utils.messaging.frame;
  */
 
 import javax.jms.Message;
-import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 
-public class RequestFrame implements Frame {
+public class RequestFrame<T extends Frame> implements Frame {
     public static final int CODE = RequestFrame.class.getCanonicalName().hashCode();
 
-    private final Class<? extends Frame> target;
-    private final Map<String, String> options;
+    private final Class<T> target;
+    private final Properties options;
 
     private transient Message message;
 
-    public RequestFrame(Class<? extends Frame> target, Map<String, String> options) {
+    public RequestFrame(Class<T> target, Properties options) {
         this.target = target;
         this.options = options;
     }
@@ -42,20 +42,20 @@ public class RequestFrame implements Frame {
         return CODE;
     }
 
-    public Class<? extends Frame> getTarget() {
+    public Class<T> getTarget() {
         return target;
     }
 
-    public Map<String, String> getOptions() {
+    public Properties getOptions() {
         return options;
     }
 
-    public Optional<String> getOption(String label){
-        if(!options.containsKey(label)){
+    public Optional<String> getOption(String key){
+        if(!options.containsKey(key)){
             return Optional.empty();
         }
 
-        return Optional.of(options.get(label));
+        return Optional.of(options.getProperty(key));
     }
 
     public Message getMessage() {

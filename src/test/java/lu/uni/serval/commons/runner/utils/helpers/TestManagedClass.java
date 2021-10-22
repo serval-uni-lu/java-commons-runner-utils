@@ -24,10 +24,7 @@ package lu.uni.serval.commons.runner.utils.helpers;
 import lu.uni.serval.commons.runner.utils.process.ManagedProcess;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.Set;
 
