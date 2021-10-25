@@ -24,6 +24,7 @@ package lu.uni.serval.commons.runner.utils.helpers;
 import lu.uni.serval.commons.runner.utils.configuration.Configuration;
 import lu.uni.serval.commons.runner.utils.configuration.ConfigurationParser;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -48,5 +49,15 @@ public class Helpers {
         }
 
         return null;
+    }
+
+    public static File getResourcesFile(String resources) throws URISyntaxException {
+        final URL resourceUrl = Helpers.class.getClassLoader().getResource(resources);
+
+        if(resourceUrl == null){
+            fail(String.format("Resources '%s' not found", resources));
+        }
+
+        return Paths.get(resourceUrl.toURI()).toFile();
     }
 }
