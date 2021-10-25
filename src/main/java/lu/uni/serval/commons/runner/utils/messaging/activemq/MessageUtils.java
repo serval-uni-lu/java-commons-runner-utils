@@ -114,37 +114,24 @@ public class MessageUtils {
         }
     }
 
-    public static <T extends Frame> T sendRequestSync(TransportListener listener, String queueName, RequestFrame<T> requestFrame, long timeout, TimeUnit timeUnit) throws JMSException, NotInitializedException, InterruptedException, TimeoutException, ResponseException, InvalidFrameException {
-        T responseFrame;
-        QueueConnection connection = null;
-
-        try{
-            connection = BrokerUtils.getQueueConnection(listener);
-            responseFrame = sendRequestSync(connection, queueName, requestFrame, timeout, timeUnit);
-        }
-        finally {
-            if(connection != null){
-                connection.close();
-            }
-        }
-
-        return responseFrame;
-    }
-
-    public static <T extends Frame> T sendRequestSync(QueueConnection connection, String queueName, RequestFrame<T> requestFrame, long timeout, TimeUnit timeUnit) throws JMSException, InterruptedException, TimeoutException, ResponseException, InvalidFrameException {
+    public static <T extends Frame> T sendRequestSync(String queueName, RequestFrame<T> requestFrame, long timeout, TimeUnit timeUnit)
+            throws NotInitializedException, JMSException, InterruptedException, TimeoutException, IOException, InvalidFrameException, ResponseException {
         Frame responseFrame;
 
         final Destination destination = new ActiveMQQueue(queueName);
 
         Session session = null;
         MessageProducer producer = null;
+        QueueConnection connection = null;
 
         try{
+            final ResponseWaiter responseWaiter = new ResponseWaiter();
+
+            connection = BrokerUtils.getQueueConnection(responseWaiter);
             session = connection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
             producer = session.createProducer(destination);
             producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
 
-            final ResponseWaiter responseWaiter = new ResponseWaiter();
             final Destination responseDestination = session.createTemporaryQueue();
             final MessageConsumer responseConsumer = session.createConsumer(responseDestination);
 
@@ -165,6 +152,10 @@ public class MessageUtils {
 
             if(session != null){
                 session.close();
+            }
+
+            if(connection != null){
+                connection.close();
             }
         }
 
@@ -313,25 +304,48 @@ public class MessageUtils {
         }
     }
 
-    private static class ResponseWaiter implements MessageListener {
+    private static class ResponseWaiter implements MessageListener, TransportListener {
         private final CountDownLatch latch = new CountDownLatch(1);
         private Frame responseFrame = null;
-        private JMSException jmsException = null;
+        private Exception exception = null;
+
+        @Override
+        public void onCommand(Object command) {
+            //ignore
+        }
+
+        @Override
+        public void onException(IOException error) {
+            exception = error;
+            latch.countDown();
+        }
+
+        @Override
+        public void transportInterupted() {
+            exception = new JMSException("Transport Interrupted");
+            latch.countDown();
+        }
+
+        @Override
+        public void transportResumed() {
+            //ignore
+        }
 
         @Override
         public void onMessage(Message message) {
             try {
                 responseFrame = fromMessage(message);
             } catch (JMSException e) {
-                jmsException = e;
+                exception = e;
             }
 
             latch.countDown();
         }
 
-        public Frame getResponseFrame() throws JMSException {
-            if(this.jmsException != null){
-                throw jmsException;
+        public Frame getResponseFrame() throws IOException, JMSException {
+            if(this.exception != null){
+                if(exception instanceof IOException) throw (IOException) exception;
+                if(exception instanceof JMSException) throw (JMSException) exception;
             }
 
             return responseFrame;

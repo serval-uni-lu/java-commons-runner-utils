@@ -39,7 +39,7 @@ public class RequestClass extends ManagedProcess {
         final RequestFrame<TextFrame> requestFrame = new RequestFrame<>(TextFrame.class, options);
 
         try {
-            final TextFrame responseFrame = MessageUtils.sendRequestSync(this, cmd.getOptionValue("workerQueueName"), requestFrame, 5, TimeUnit.SECONDS);
+            final TextFrame responseFrame = MessageUtils.sendRequestSync(cmd.getOptionValue("workerQueueName"), requestFrame, 5, TimeUnit.SECONDS);
             System.out.println(responseFrame.getText());
         } catch (Exception e) {
             logger.printf(
