@@ -35,6 +35,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.Socket;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -53,7 +54,7 @@ class BrokerLauncherTest {
         assertTrue(brokerLauncher.isRunning());
         brokerLauncher.close();
 
-        assertTrue(Awaiter.waitUntil(() -> !brokerLauncher.isRunning(), 10000));
+        assertTrue(Awaiter.waitUntil(() -> !brokerLauncher.isRunning(), 10, TimeUnit.SECONDS));
         assertThrows(ConnectException.class, () -> new Socket(Constants.DEFAULT_BROKER_HOST, Constants.DEFAULT_BROKER_PORT));
     }
 
@@ -64,11 +65,9 @@ class BrokerLauncherTest {
         try(final BrokerLauncher brokerLauncher = new BrokerLauncher("testBroker")){
             brokerLauncher.executeAndWaitForReady();
             launcher.executeAsync();
-            // give time for the process to properly start
-            Thread.sleep(1000);
             assertTrue(launcher.isRunning());
         }
 
-        assertTrue(Awaiter.waitUntil(() -> !launcher.isRunning(), 10000));
+        assertTrue(Awaiter.waitUntil(() -> !launcher.isRunning(), 10, TimeUnit.SECONDS));
     }
 }

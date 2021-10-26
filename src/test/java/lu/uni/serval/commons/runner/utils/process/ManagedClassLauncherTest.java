@@ -85,8 +85,6 @@ class ManagedClassLauncherTest {
         assertTrue(readyFrame.isPresent());
         assertEquals(ReadyFrame.CODE, readyFrame.get().getCode());
         assertTrue(classLauncher.isRunning());
-        Thread.sleep(500);
-        assertTrue(classLauncher.isRunning());
 
         MessageUtils.sendMessageToTopic(new TestTransportListener(), Constants.TOPIC_ADMIN, new StopFrame());
         final Optional<Frame> closingFrame = MessageUtils.waitForMessage(classLauncher.getName(), ClosingFrame.CODE);
@@ -102,10 +100,8 @@ class ManagedClassLauncherTest {
         final Optional<Frame> readyFrame = MessageUtils.waitForMessage(classLauncher.getName(), ReadyFrame.CODE);
         assertTrue(readyFrame.isPresent());
         assertEquals(ReadyFrame.CODE, readyFrame.get().getCode());
-        assertTrue(classLauncher.isRunning());
-        Thread.sleep(500);
-        assertTrue(classLauncher.isRunning());
 
+        assertTrue(classLauncher.isRunning());
         classLauncher.kill();
         assertFalse(classLauncher.isRunning());
     }

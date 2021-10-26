@@ -56,9 +56,9 @@ public class Awaiter {
         return countDownLatch.await(timeout, timeUnit);
     }
 
-    public static boolean waitUntil(Callable<Boolean> condition, long timeout){
+    public static boolean waitUntil(Callable<Boolean> condition, long timeout, TimeUnit timeUnit){
         try{
-            long maxTime = timeout + System.currentTimeMillis();
+            long maxTime = timeUnit.toMillis(timeout) + System.currentTimeMillis();
             while (maxTime > System.currentTimeMillis()){
                 if(Boolean.TRUE.equals(condition.call())) return true;
                 TimeUnit.MILLISECONDS.sleep(POLL_FREQUENCY);
