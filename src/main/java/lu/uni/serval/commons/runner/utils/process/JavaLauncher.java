@@ -25,10 +25,9 @@ import lu.uni.serval.commons.runner.utils.configuration.Entries;
 import lu.uni.serval.commons.runner.utils.configuration.Entry;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.lang.management.ManagementFactory;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public abstract class JavaLauncher extends ProcessLauncher {
     private File javaHome;
@@ -74,6 +73,12 @@ public abstract class JavaLauncher extends ProcessLauncher {
         parameters.addAll(longNameParameters.format("--", " "));
 
         return parameters;
+    }
+
+    protected Set<String> getJavaagents(){
+        return ManagementFactory.getRuntimeMXBean().getInputArguments().stream()
+                .filter(a -> a.startsWith("-javaagent:"))
+                .collect(Collectors.toSet());
     }
 
     @Override

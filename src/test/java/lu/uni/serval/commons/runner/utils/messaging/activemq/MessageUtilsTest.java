@@ -14,6 +14,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -63,6 +65,6 @@ class MessageUtilsTest {
         requestProcess.addListener(requestProcessOutput);
         requestProcess.executeSync(15, TimeUnit.SECONDS);
 
-        assertTrue(requestProcessOutput.getOut().contains("[ResponseException]Forced exception"));
+        assertTrue(requestProcessOutput.getOut().contains("[java.lang.Exception] Forced exception"));
     }
 }

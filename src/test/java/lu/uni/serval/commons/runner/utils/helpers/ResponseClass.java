@@ -38,7 +38,7 @@ public class ResponseClass extends ManagedProcess {
     @Override
     protected Frame onRequest(RequestFrame<?> requestFrame){
         if(this.isError){
-            return new ErrorFrame(ResponseException.class, "Forced exception");
+            return new ErrorFrame(Exception.class, "Forced exception");
         }
 
         final Class<?> target = requestFrame.getTarget();

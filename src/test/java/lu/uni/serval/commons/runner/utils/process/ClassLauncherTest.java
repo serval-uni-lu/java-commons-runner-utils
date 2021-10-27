@@ -42,7 +42,7 @@ class ClassLauncherTest {
         classLauncher.addListener(stringLogger);
         classLauncher.executeSync(20, TimeUnit.SECONDS);
 
-        assertEquals("Hello from process with arguments: []", stringLogger.getOut().trim());
+        assertTrue(stringLogger.getOut().contains("Hello from process with arguments: []"));
         assertEquals("", stringLogger.getErr().trim());
     }
 
