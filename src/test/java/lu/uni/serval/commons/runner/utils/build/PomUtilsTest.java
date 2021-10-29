@@ -6,8 +6,6 @@ import org.dom4j.DocumentException;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
-
-
 import java.io.File;
 import java.net.URISyntaxException;
 import java.util.Collection;

@@ -36,7 +36,10 @@ public class FrameInputStream extends ObjectInputStream {
 
     @Override
     protected Class<?> resolveClass(ObjectStreamClass osc) throws IOException, ClassNotFoundException {
-        if (!allowedClasses.contains(osc.getName())) {
+        if(!osc.getName().startsWith("java.util")
+                && !osc.getName().startsWith("java.lang")
+                && !allowedClasses.contains(osc.getName())
+        ){
             throw new InvalidClassException("Unauthorized deserialization", osc.getName());
         }
 
