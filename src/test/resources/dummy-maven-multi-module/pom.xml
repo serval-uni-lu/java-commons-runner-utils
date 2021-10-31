@@ -11,7 +11,7 @@
     </properties>
 
     <groupId>lu.uni.serval</groupId>
-    <artifactId>mercator-test</artifactId>
+    <artifactId>dummy-project</artifactId>
     <version>${revision}</version>
 
     <packaging>pom</packaging>

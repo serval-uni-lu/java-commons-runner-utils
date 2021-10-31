@@ -1,4 +1,4 @@
-package lu.uni.serval.commons.runner.utils.process;
+package lu.uni.serval.commons.runner.utils.build.maven;
 
 /*-
  * #%L
@@ -24,6 +24,8 @@ package lu.uni.serval.commons.runner.utils.process;
 import lu.uni.serval.commons.runner.utils.configuration.Entries;
 import lu.uni.serval.commons.runner.utils.configuration.Entry;
 import lu.uni.serval.commons.runner.utils.os.OsUtils;
+import lu.uni.serval.commons.runner.utils.process.FileLogger;
+import lu.uni.serval.commons.runner.utils.process.JavaLauncher;
 
 import java.io.*;
 import java.util.*;
@@ -52,6 +54,14 @@ public class MavenLauncher extends JavaLauncher {
 
     public MavenLauncher withMavenOptions(List<Entry> options){
         mavenOptions.putAll(options);
+        return this;
+    }
+
+    public MavenLauncher withEnvironmentVariables(Entry... entries){
+        for(Entry entry: entries){
+            super.addEnvironmentVariable(entry);
+        }
+
         return this;
     }
 
@@ -92,6 +102,11 @@ public class MavenLauncher extends JavaLauncher {
 
     public MavenLauncher inDirectory(File directory){
         super.setDirectory(directory);
+        return this;
+    }
+
+    public MavenLauncher forGoals(String... goals){
+        this.goals = Arrays.asList(goals);
         return this;
     }
 

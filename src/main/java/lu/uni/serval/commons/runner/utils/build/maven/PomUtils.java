@@ -1,6 +1,5 @@
-package lu.uni.serval.commons.runner.utils.build;
+package lu.uni.serval.commons.runner.utils.build.maven;
 
-import lu.uni.serval.commons.runner.utils.version.Version;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.NameFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
@@ -15,11 +14,11 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 
-public class PomUtils {
+class PomUtils {
     private PomUtils() {}
 
-    public static void writeAgentToPom(Version version, String agent) throws DocumentException, SAXException, IOException {
-        for(File pom: PomUtils.findPoms(version.getLocation())){
+    public static void writeAgentToPom(File projectFolder, String agent) throws DocumentException, SAXException, IOException {
+        for(File pom: PomUtils.findPoms(projectFolder)){
             final Document document = PomUtils.buildPomWithAgent(pom, agent);
 
             if(PomUtils.hasNode(document, "argLine")){

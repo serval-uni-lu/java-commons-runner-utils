@@ -1,4 +1,4 @@
-package lu.uni.serval.commons.runner.utils.build;
+package lu.uni.serval.commons.runner.utils.build.maven;
 
 import lu.uni.serval.commons.runner.utils.helpers.Helpers;
 import org.dom4j.Document;
@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class PomUtilsTest {
     @Test
     void testFindPoms() throws URISyntaxException {
-        final File resourcesFile = Helpers.getResourcesFile("dummy-maven");
+        final File resourcesFile = Helpers.getResourcesFile("dummy-maven-multi-module");
         final Collection<File> poms = PomUtils.findPoms(resourcesFile);
 
         assertEquals(3, poms.size());
@@ -23,7 +23,7 @@ class PomUtilsTest {
 
     @Test
     void testBuildPomWithAgentWithArgLine() throws URISyntaxException, SAXException, DocumentException {
-        final File pom = Helpers.getResourcesFile("dummy-maven/module2/pom.xml");
+        final File pom = Helpers.getResourcesFile("dummy-maven-multi-module/module2/pom.xml");
         final Document document = PomUtils.buildPomWithAgent(pom, "-javaagent:/path/to/agent=arg1,arg2");
 
         assertTrue(PomUtils.hasNode(document, "argLine"));
@@ -32,7 +32,7 @@ class PomUtilsTest {
 
     @Test
     void testBuildPomWithoutAgentWithArgLine() throws URISyntaxException, DocumentException, SAXException {
-        final File pom = Helpers.getResourcesFile("dummy-maven/module1/pom.xml");
+        final File pom = Helpers.getResourcesFile("dummy-maven-multi-module/module1/pom.xml");
         final Document document = PomUtils.buildPomWithAgent(pom, "-javaagent:/path/to/agent=arg1,arg2");
 
         assertFalse(PomUtils.hasNode(document, "argLine"));

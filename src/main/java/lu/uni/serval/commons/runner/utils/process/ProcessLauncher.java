@@ -64,10 +64,15 @@ public abstract class ProcessLauncher {
         environmentVariables.add(entry);
     }
 
-    public void executeSync(int timeout, TimeUnit timeUnit) throws IOException, InterruptedException {
+    public String executeSync(int timeout, TimeUnit timeUnit) throws IOException, InterruptedException {
+        final StringLogger stringLogger = new StringLogger();
+        addListener(stringLogger);
+
         execute();
         processLogger.join(TimeUnit.MILLISECONDS.convert(timeout, timeUnit));
         kill();
+
+        return stringLogger.getOut();
     }
 
     public void executeAsync() throws IOException {
