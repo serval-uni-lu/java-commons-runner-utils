@@ -52,7 +52,11 @@ public class JarLauncher extends JavaLauncher {
         final List<String> command = new ArrayList<>();
 
         command.add("java");
-        command.addAll(getJavaagents());
+
+        if(isPropagateJavaAgents()){
+            command.addAll(getJavaagents());
+        }
+
         command.add("-jar");
 
         command.add(new Entry(getJarName()).format(""));

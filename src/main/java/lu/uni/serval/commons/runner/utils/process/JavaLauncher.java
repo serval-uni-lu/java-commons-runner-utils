@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 
 public abstract class JavaLauncher extends ProcessLauncher {
     private File javaHome;
+    private boolean isPropagateJavaAgents = false;
     private final Entries javaParameters = new Entries();
     private final Entries shortNameParameters = new Entries();
     private final Entries longNameParameters = new Entries();
@@ -38,6 +39,14 @@ public abstract class JavaLauncher extends ProcessLauncher {
 
     protected JavaLauncher(String name) {
         super(name);
+    }
+
+    public boolean isPropagateJavaAgents() {
+        return isPropagateJavaAgents;
+    }
+
+    public void setPropagateJavaAgents(boolean propagateJavaAgents) {
+        isPropagateJavaAgents = propagateJavaAgents;
     }
 
     protected void setJavaHome(File javaHome){
