@@ -19,8 +19,12 @@ public class Maven {
         this.version = version;
     }
 
-    public void writeAgentToPom(String agent) throws DocumentException, IOException, SAXException {
-        PomUtils.writeAgentToPom(this.version.getLocation(), agent);
+    public void addAgentToPom(String agent) throws DocumentException, IOException, SAXException {
+        PomUtils.modifyArgLineAgent(this.version.getLocation(), agent, PomUtils.Action.ADD);
+    }
+
+    public void removeAgentFromPom(String agent) throws DocumentException, IOException, SAXException {
+        PomUtils.modifyArgLineAgent(this.version.getLocation(), agent, PomUtils.Action.REMOVE);
     }
 
     public List<String> getModuleNames() throws IOException, InterruptedException {

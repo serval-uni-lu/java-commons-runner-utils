@@ -36,6 +36,8 @@ public class MavenLauncher extends JavaLauncher {
     private final Entries javaToolOptions = new Entries();
     private final Entries mavenOptions = new Entries();
     private final List<String> profiles = new ArrayList<>();
+
+    private List<String> modules = new ArrayList<>();
     private List<String> goals = Collections.emptyList();
 
     public MavenLauncher() {
@@ -105,6 +107,16 @@ public class MavenLauncher extends JavaLauncher {
         return this;
     }
 
+    public MavenLauncher forModules(String... modules){
+        this.modules = Arrays.asList(modules);
+        return this;
+    }
+
+    public MavenLauncher forModules(List<String> modules){
+        this.modules = modules;
+        return this;
+    }
+
     public MavenLauncher forGoals(String... goals){
         this.goals = Arrays.asList(goals);
         return this;
@@ -152,6 +164,12 @@ public class MavenLauncher extends JavaLauncher {
 
         command.add(OsUtils.isWindows() ? "mvn.cmd" : "mvn");
         command.add("--batch-mode");
+
+        if(!modules.isEmpty()) {
+            command.add("-pl");
+            command.add(String.join(",", modules));
+        }
+
         command.addAll(goals);
 
         command.addAll(getParameters());

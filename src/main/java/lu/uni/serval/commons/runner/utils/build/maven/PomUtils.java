@@ -15,11 +15,16 @@ import java.util.Collection;
 import java.util.List;
 
 class PomUtils {
+    enum Action {
+        ADD,
+        REMOVE
+    }
+
     private PomUtils() {}
 
-    public static void writeAgentToPom(File projectFolder, String agent) throws DocumentException, SAXException, IOException {
+    public static void modifyArgLineAgent(File projectFolder, String agent, Action action) throws DocumentException, SAXException, IOException {
         for(File pom: PomUtils.findPoms(projectFolder)){
-            final Document document = PomUtils.buildPomWithAgent(pom, agent);
+            final Document document = buildPomWithAgentModified(pom, agent, action);
 
             if(PomUtils.hasNode(document, "argLine")){
                 try(FileWriter writer = new FileWriter(pom, false)) {
@@ -33,7 +38,7 @@ class PomUtils {
         return FileUtils.listFiles(root, new NameFileFilter("pom.xml"), TrueFileFilter.INSTANCE);
     }
 
-    public static Document buildPomWithAgent(File pom, String agentString) throws SAXException, DocumentException {
+    public static Document buildPomWithAgentModified(File pom, String agentString, Action action) throws SAXException, DocumentException {
         final SAXReader xmlReader = new SAXReader();
         xmlReader.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
         xmlReader.setFeature("http://xml.org/sax/features/external-general-entities", false);
@@ -42,7 +47,16 @@ class PomUtils {
         final Document document = xmlReader.read(pom);
         final List<Node> nodes = document.selectNodes("//*[local-name()='argLine']");
 
-        nodes.forEach(n -> n.setText(String.format("%s -javaagent:%s", n.getText(), agentString)));
+        switch (action){
+            case ADD:
+                nodes.forEach(n -> n.setText(String.format("%s -javaagent:%s", n.getText(), agentString)));
+                break;
+            case REMOVE:
+                final String agentArg = String.format(" -javaagent:%s", agentString);
+                nodes.forEach(n -> n.setText(n.getText().replace(agentArg, "")));
+                break;
+        }
+
 
         return document;
     }

@@ -24,7 +24,7 @@ class PomUtilsTest {
     @Test
     void testBuildPomWithAgentWithArgLine() throws URISyntaxException, SAXException, DocumentException {
         final File pom = Helpers.getResourcesFile("dummy-maven-multi-module/module2/pom.xml");
-        final Document document = PomUtils.buildPomWithAgent(pom, "-javaagent:/path/to/agent=arg1,arg2");
+        final Document document = PomUtils.buildPomWithAgentModified(pom, "-javaagent:/path/to/agent=arg1,arg2", PomUtils.Action.ADD);
 
         assertTrue(PomUtils.hasNode(document, "argLine"));
         assertTrue(document.asXML().contains("-javaagent:/path/to/agent=arg1,arg2"));
@@ -33,7 +33,7 @@ class PomUtilsTest {
     @Test
     void testBuildPomWithoutAgentWithArgLine() throws URISyntaxException, DocumentException, SAXException {
         final File pom = Helpers.getResourcesFile("dummy-maven-multi-module/module1/pom.xml");
-        final Document document = PomUtils.buildPomWithAgent(pom, "-javaagent:/path/to/agent=arg1,arg2");
+        final Document document = PomUtils.buildPomWithAgentModified(pom, "-javaagent:/path/to/agent=arg1,arg2", PomUtils.Action.ADD);
 
         assertFalse(PomUtils.hasNode(document, "argLine"));
         assertFalse(document.asXML().contains("-javaagent:/path/to/agent=arg1,arg2"));
