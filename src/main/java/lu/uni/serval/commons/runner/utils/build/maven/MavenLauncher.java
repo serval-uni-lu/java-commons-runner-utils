@@ -24,7 +24,7 @@ package lu.uni.serval.commons.runner.utils.build.maven;
 import lu.uni.serval.commons.runner.utils.configuration.Entries;
 import lu.uni.serval.commons.runner.utils.configuration.Entry;
 import lu.uni.serval.commons.runner.utils.os.OsUtils;
-import lu.uni.serval.commons.runner.utils.process.FileLogger;
+import lu.uni.serval.commons.runner.utils.listener.FileLogger;
 import lu.uni.serval.commons.runner.utils.process.JavaLauncher;
 
 import java.io.*;

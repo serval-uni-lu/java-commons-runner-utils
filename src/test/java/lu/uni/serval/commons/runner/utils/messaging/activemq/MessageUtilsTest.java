@@ -28,14 +28,12 @@ import lu.uni.serval.commons.runner.utils.helpers.ResponseClass;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.broker.BrokerInfo;
 import lu.uni.serval.commons.runner.utils.messaging.activemq.broker.BrokerLauncher;
 import lu.uni.serval.commons.runner.utils.process.ManagedClassLauncher;
-import lu.uni.serval.commons.runner.utils.process.StringLogger;
+import lu.uni.serval.commons.runner.utils.listener.StringLogger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
-import java.lang.management.RuntimeMXBean;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

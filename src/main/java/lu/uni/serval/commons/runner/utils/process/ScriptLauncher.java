@@ -22,6 +22,7 @@ package lu.uni.serval.commons.runner.utils.process;
 
 
 import lu.uni.serval.commons.runner.utils.configuration.Entry;
+import lu.uni.serval.commons.runner.utils.listener.FileLogger;
 import lu.uni.serval.commons.runner.utils.os.OsUtils;
 
 import java.io.File;

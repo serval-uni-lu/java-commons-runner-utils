@@ -21,6 +21,7 @@ package lu.uni.serval.commons.runner.utils.process;
  */
 
 
+import lu.uni.serval.commons.runner.utils.listener.Listener;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -32,7 +33,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 
-public class InputStreamSplitter extends Thread{
+class InputStreamSplitter extends Thread{
     private static final Logger logger = LogManager.getLogger(InputStreamSplitter.class);
 
     final BufferedReader reader;

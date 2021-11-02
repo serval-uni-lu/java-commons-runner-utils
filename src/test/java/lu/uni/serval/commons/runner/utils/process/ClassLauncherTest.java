@@ -22,6 +22,7 @@ package lu.uni.serval.commons.runner.utils.process;
 
 
 import lu.uni.serval.commons.runner.utils.helpers.*;
+import lu.uni.serval.commons.runner.utils.listener.StringLogger;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
