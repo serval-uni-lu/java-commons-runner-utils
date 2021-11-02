@@ -98,7 +98,7 @@ public class MavenLauncher extends JavaLauncher {
     }
 
     public MavenLauncher usingProfile(List<String> profiles){
-        this.profiles.addAll(profiles);
+        this.profiles.addAll(cleanList(profiles));
         return this;
     }
 
@@ -108,22 +108,20 @@ public class MavenLauncher extends JavaLauncher {
     }
 
     public MavenLauncher forModules(String... modules){
-        this.modules = Arrays.asList(modules);
-        return this;
+        return forModules(Arrays.asList(modules));
     }
 
     public MavenLauncher forModules(List<String> modules){
-        this.modules = modules;
+        this.modules = cleanList(modules);
         return this;
     }
 
     public MavenLauncher forGoals(String... goals){
-        this.goals = Arrays.asList(goals);
-        return this;
+        return forGoals(Arrays.asList(goals));
     }
 
     public MavenLauncher forGoals(List<String> goals) {
-        this.goals = goals;
+        this.goals = cleanList(goals);
         return this;
     }
 
@@ -179,5 +177,12 @@ public class MavenLauncher extends JavaLauncher {
         }
 
         return command;
+    }
+
+    private List<String> cleanList(List<String> raw){
+        return raw.stream()
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
     }
 }

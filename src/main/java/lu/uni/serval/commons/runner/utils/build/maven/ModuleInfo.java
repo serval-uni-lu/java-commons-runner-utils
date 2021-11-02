@@ -1,4 +1,4 @@
-package lu.uni.serval.commons.runner.utils.messaging.frame;
+package lu.uni.serval.commons.runner.utils.build.maven;
 
 /*-
  * #%L
@@ -20,27 +20,20 @@ package lu.uni.serval.commons.runner.utils.messaging.frame;
  * #L%
  */
 
-public class ErrorFrame implements Frame {
-    public static final int CODE = EndFrame.class.getCanonicalName().hashCode();
+public class ModuleInfo {
+    private final String artifactId;
+    private final String packaging;
 
-    private final String type;
-    private final String message;
-
-    public ErrorFrame(Class<? extends Exception> exception, String message) {
-        this.type = exception.getCanonicalName();
-        this.message = message;
+    public ModuleInfo(String artifactId, String packaging) {
+        this.artifactId = artifactId;
+        this.packaging = packaging;
     }
 
-    public String getType() {
-        return type;
+    public String getArtifactId() {
+        return artifactId;
     }
 
-    public String getMessage() {
-        return message;
-    }
-
-    @Override
-    public int getCode() {
-        return CODE;
+    public String getPackaging() {
+        return packaging;
     }
 }

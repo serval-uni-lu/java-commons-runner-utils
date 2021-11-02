@@ -1,5 +1,25 @@
 package lu.uni.serval.commons.runner.utils.build.maven;
 
+/*-
+ * #%L
+ * Runner Utils
+ * %%
+ * Copyright (C) 2021 University of Luxembourg
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License")
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
+
 import lu.uni.serval.commons.runner.utils.helpers.Helpers;
 import lu.uni.serval.commons.runner.utils.version.Version;
 import org.junit.jupiter.api.BeforeAll;
@@ -45,20 +65,23 @@ class MavenTest {
     @Test
     void testModuleNameDiscoveryMultiModule() throws IOException, InterruptedException {
         final Maven maven = new Maven(dummyMultiModules);
-        final List<String> moduleNames = maven.getModuleNames();
+        final List<ModuleInfo> moduleInfoList = maven.getModuleInfoList();
 
-        assertEquals(3, moduleNames.size());
-        assertEquals("dummy-project", moduleNames.get(0));
-        assertTrue(moduleNames.contains("module1"));
-        assertTrue(moduleNames.contains("module2"));
+        assertEquals(3, moduleInfoList.size());
+        assertEquals("dummy-project", moduleInfoList.get(0).getArtifactId());
+        assertEquals("pom", moduleInfoList.get(0).getPackaging());
+
+        assertTrue(moduleInfoList.stream().anyMatch(m -> m.getArtifactId().equals("module1")));
+        assertTrue(moduleInfoList.stream().anyMatch(m -> m.getArtifactId().equals("module2")));
     }
 
     @Test
     void testModuleNameDiscoverySingleModule() throws IOException, InterruptedException {
         final Maven maven = new Maven(dummySingleModule);
-        final List<String> moduleNames = maven.getModuleNames();
+        final List<ModuleInfo> moduleNames = maven.getModuleInfoList();
 
         assertEquals(1, moduleNames.size());
-        assertEquals("dummy-project", moduleNames.get(0));
+        assertEquals("dummy-project", moduleNames.get(0).getArtifactId());
+        assertEquals("jar", moduleNames.get(0).getPackaging());
     }
 }
