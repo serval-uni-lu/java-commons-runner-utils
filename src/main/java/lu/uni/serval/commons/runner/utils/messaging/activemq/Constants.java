@@ -28,6 +28,7 @@ public class Constants {
     public static final String DEFAULT_BROKER_PROTOCOL = "tcp";
     public static final String DEFAULT_BROKER_HOST = LOCALHOST;
     public static final int DEFAULT_BROKER_PORT = 61616;
+    public static final String DATE_TIME_FORMAT = "yyyy-MM-dd.HH:mm:ss";
 
     public static final String TOPIC_ADMIN = "TOPIC.ADMIN";
 }
