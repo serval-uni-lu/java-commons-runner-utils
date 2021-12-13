@@ -56,7 +56,11 @@ public class ManagedClassLauncher extends JavaLauncher {
         final List<String> command = new LinkedList<>();
 
         command.add("java");
-        command.addAll(getJavaagents());
+
+        if(isPropagateJavaAgents()){
+            command.addAll(getJavaagents());
+        }
+
         command.add("-cp");
         command.add(System.getProperty("java.class.path"));
         command.add(this.classLaunched.getName());
