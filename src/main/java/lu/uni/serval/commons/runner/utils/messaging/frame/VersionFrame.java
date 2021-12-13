@@ -30,12 +30,20 @@ public class VersionFrame implements Frame {
     private final LocalDateTime date;
     private final String commitId;
     private final String difference;
+    private final String previousProject;
+    private final String previousCommitId;
 
-    public VersionFrame(String project, LocalDateTime date, String commitId, String difference) {
+    public VersionFrame(String project, LocalDateTime date, String commitId, String difference, String previousProject, String previousCommitId) {
         this.project = project;
         this.date = date;
         this.commitId = commitId;
         this.difference = difference;
+        this.previousProject = previousProject;
+        this.previousCommitId = previousCommitId;
+    }
+
+    public VersionFrame(String project, LocalDateTime date, String commitId){
+        this(project, date, commitId, "", "", "");
     }
 
     public String getProject() {
@@ -52,6 +60,14 @@ public class VersionFrame implements Frame {
 
     public String getDifference() {
         return difference;
+    }
+
+    public String getPreviousProject() {
+        return previousProject;
+    }
+
+    public String getPreviousCommitId() {
+        return previousCommitId;
     }
 
     @Override
