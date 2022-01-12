@@ -25,7 +25,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.File;
 
-public class FolderConfiguration extends Configuration{
+public class FolderConfiguration<T extends BuildConfiguration> extends Configuration{
     public enum NameFormat{
         VERSION,
         DATE,
@@ -38,8 +38,8 @@ public class FolderConfiguration extends Configuration{
     NameFormat nameFormat;
     @JsonProperty(value = "date format")
     String dateFormat;
-    @JsonProperty(value = "process configuration")
-    private MavenConfiguration mavenConfiguration;
+    @JsonProperty(value = "build configuration")
+    private T buildConfiguration;
 
     public File getRootFolder() {
         return rootFolder;
@@ -65,11 +65,11 @@ public class FolderConfiguration extends Configuration{
         this.dateFormat = dateFormat;
     }
 
-    public MavenConfiguration getProcessConfiguration() {
-        return mavenConfiguration;
+    public T getBuildConfiguration() {
+        return buildConfiguration;
     }
 
-    public void setProcessConfiguration(MavenConfiguration mavenConfiguration) {
-        this.mavenConfiguration = mavenConfiguration;
+    public void setBuildConfiguration(T buildConfiguration) {
+        this.buildConfiguration = buildConfiguration;
     }
 }

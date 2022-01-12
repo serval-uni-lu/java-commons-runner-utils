@@ -28,7 +28,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.Set;
 
-public class RepositoryConfiguration extends Configuration{
+public class RepositoryConfiguration<T extends BuildConfiguration> extends Configuration{
     @JsonProperty(value = "ignore", defaultValue = "false")
     boolean ignore = false;
     @JsonProperty(value = "location", required = true)
@@ -45,8 +45,8 @@ public class RepositoryConfiguration extends Configuration{
     private Frequency frequency = Frequency.UNIQUE;
     @JsonProperty(value = "branch")
     private String branch = null;
-    @JsonProperty(value = "process configuration")
-    private MavenConfiguration mavenConfiguration = new MavenConfiguration();
+    @JsonProperty(value = "build configuration")
+    private T buildConfiguration = null;
     @JsonProperty(value = "cherry pick")
     private String[] cherryPick;
 
@@ -114,12 +114,12 @@ public class RepositoryConfiguration extends Configuration{
         this.branch = branch;
     }
 
-    public MavenConfiguration getProcessConfiguration() {
-        return mavenConfiguration;
+    public T getBuildConfiguration() {
+        return buildConfiguration;
     }
 
-    public void setProcessConfiguration(MavenConfiguration process) {
-        this.mavenConfiguration = process;
+    public void setProcessConfiguration(T buildConfiguration) {
+        this.buildConfiguration = buildConfiguration;
     }
 
     public String[] getCherryPick() {

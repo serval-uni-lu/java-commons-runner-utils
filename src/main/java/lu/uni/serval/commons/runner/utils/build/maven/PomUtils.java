@@ -75,6 +75,8 @@ class PomUtils {
                 final String agentArg = String.format(" -javaagent:%s", agentString);
                 nodes.forEach(n -> n.setText(n.getText().replace(agentArg, "")));
                 break;
+            default:
+                throw new IllegalArgumentException("Can only add or remove javaagent not: " + action.name());
         }
 
 

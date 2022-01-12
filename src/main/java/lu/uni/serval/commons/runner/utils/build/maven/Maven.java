@@ -33,9 +33,9 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class Maven {
-    private final Version version;
+    private final Version<MavenConfiguration> version;
 
-    public Maven(Version version) {
+    public Maven(Version<MavenConfiguration> version) {
         this.version = version;
     }
 

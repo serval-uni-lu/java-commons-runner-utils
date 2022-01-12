@@ -21,8 +21,10 @@ package lu.uni.serval.commons.runner.utils.version;
  */
 
 
+import lu.uni.serval.commons.runner.utils.configuration.BuildConfiguration;
+
 import java.io.IOException;
 
-public interface VersionProvider extends Iterable<Version> {
+public interface VersionProvider<T extends BuildConfiguration> extends Iterable<Version<T>> {
     void clean() throws IOException;
 }

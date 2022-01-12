@@ -26,6 +26,7 @@ import lu.uni.serval.commons.git.utils.CommitCollector;
 import lu.uni.serval.commons.git.utils.GitCommit;
 import lu.uni.serval.commons.git.utils.GitUtils;
 import lu.uni.serval.commons.git.utils.LocalRepository;
+import lu.uni.serval.commons.runner.utils.configuration.BuildConfiguration;
 import lu.uni.serval.commons.runner.utils.configuration.GitConfiguration;
 import lu.uni.serval.commons.runner.utils.configuration.RepositoryConfiguration;
 import lu.uni.serval.commons.runner.utils.os.OsUtils;
@@ -33,7 +34,6 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import lu.uni.serval.commons.runner.utils.configuration.MavenConfiguration;
 
 import java.io.File;
 import java.io.IOException;
@@ -41,14 +41,14 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
 
-public class GitProvider implements VersionProvider {
+public class GitProvider<T extends BuildConfiguration> implements VersionProvider<T> {
     private static final Logger logger = LogManager.getLogger(GitProvider.class);
 
-    private final GitConfiguration configuration;
+    private final GitConfiguration<T> configuration;
     private final File tmpFolder;
     private final Set<LocalRepository> repositories;
 
-    public GitProvider(GitConfiguration configuration) throws IOException {
+    public GitProvider(GitConfiguration<T> configuration) throws IOException {
         this.configuration = configuration;
         this.tmpFolder = OsUtils.getTmpFolder();
         this.repositories = new HashSet<>();
@@ -64,16 +64,16 @@ public class GitProvider implements VersionProvider {
     }
 
     @Override
-    public Iterator<Version> iterator() {
+    public Iterator<Version<T>> iterator() {
         return new GitIterator();
     }
 
-    class GitIterator implements Iterator<Version> {
-        private final Iterator<RepositoryConfiguration> configIterator = configuration.getRepositories().iterator();
+    class GitIterator implements Iterator<Version<T>> {
+        private final Iterator<RepositoryConfiguration<T>> configIterator = configuration.getRepositories().iterator();
 
         private Iterator<GitCommit> commitIterator = null;
         private LocalRepository repository = null;
-        private MavenConfiguration mavenConfiguration = null;
+        private T buildConfiguration = null;
 
         @Override
         public boolean hasNext() {
@@ -88,26 +88,26 @@ public class GitProvider implements VersionProvider {
         }
 
         @Override
-        public Version next() {
+        public Version<T> next() {
             if(!hasNext()){
                 return null;
             }
 
             final GitCommit commit = commitIterator.next();
-            Version version;
+            Version<T> version;
 
             try {
                 GitUtils.checkout(repository.getGit(), commit.getId());
 
                 final LocalDateTime dateTime = commit.getDate().atZone(ZoneId.systemDefault()).toLocalDateTime();
 
-                version = new Version(
+                version = new Version<>(
                         repository.getRemoteUrl(),
                         repository.getLocation(),
                         dateTime,
                         commit.getId(),
                         commit.getDifference().getFormatted(),
-                        mavenConfiguration
+                        buildConfiguration
                 );
             } catch (GitAPIException | IOException e) {
                 logger.error(String.format("Git API error failed to load commit %s from %s: %s",
@@ -121,14 +121,14 @@ public class GitProvider implements VersionProvider {
             return version;
         }
 
-        private void initialize(RepositoryConfiguration repository){
+        private void initialize(RepositoryConfiguration<T> repository){
             if(repository.isIgnore()){
                 reset();
                 return;
             }
 
             try {
-                mavenConfiguration = repository.getProcessConfiguration();
+                buildConfiguration = repository.getBuildConfiguration();
 
                 final File repositoryFolder = new File(tmpFolder, GitUtils.extractProjectName(repository.getLocation()));
 
@@ -177,14 +177,14 @@ public class GitProvider implements VersionProvider {
             }
         }
 
-        private boolean isCherryPick(RepositoryConfiguration repository){
+        private boolean isCherryPick(RepositoryConfiguration<T> repository){
             return repository.getCherryPick() != null && repository.getCherryPick().length != 0;
         }
 
         private void reset(){
             this.repository = null;
             this.commitIterator = null;
-            this.mavenConfiguration = null;
+            this.buildConfiguration = null;
         }
     }
 }

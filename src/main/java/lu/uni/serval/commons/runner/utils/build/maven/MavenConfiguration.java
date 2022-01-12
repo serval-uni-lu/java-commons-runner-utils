@@ -1,4 +1,4 @@
-package lu.uni.serval.commons.runner.utils.configuration;
+package lu.uni.serval.commons.runner.utils.build.maven;
 
 /*-
  * #%L
@@ -22,11 +22,14 @@ package lu.uni.serval.commons.runner.utils.configuration;
 
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lu.uni.serval.commons.runner.utils.configuration.BuildConfiguration;
+import lu.uni.serval.commons.runner.utils.configuration.Entries;
+import lu.uni.serval.commons.runner.utils.configuration.Entry;
 
 import java.util.Collections;
 import java.util.List;
 
-public class MavenConfiguration extends Configuration {
+public class MavenConfiguration extends BuildConfiguration {
     @JsonProperty(value = "java home")
     String javaHome = "";
     @JsonProperty(value = "environment variables")
@@ -39,12 +42,8 @@ public class MavenConfiguration extends Configuration {
     List<Entry> mavenOptions = Collections.emptyList();
     @JsonProperty(value = "profiles")
     List<String> profiles = Collections.emptyList();
-    @JsonProperty(value = "run before")
-    String beforeBuild = "";
     @JsonProperty(value = "maven goals")
     List<String> goals = Collections.emptyList();
-    @JsonProperty(value = "run after")
-    String afterBuild = "";
 
     public String getJavaHome() {
         return javaHome;
@@ -94,27 +93,11 @@ public class MavenConfiguration extends Configuration {
         this.profiles = freeFormParameters;
     }
 
-    public String getBeforeBuild() {
-        return beforeBuild;
-    }
-
-    public void setBeforeBuild(String beforeBuild) {
-        this.beforeBuild = beforeBuild;
-    }
-
     public List<String> getGoals() {
         return goals;
     }
 
     public void setGoals(List<String> goals) {
         this.goals = goals;
-    }
-
-    public String getAfterBuild() {
-        return afterBuild;
-    }
-
-    public void setAfterBuild(String afterBuild) {
-        this.afterBuild = afterBuild;
     }
 }

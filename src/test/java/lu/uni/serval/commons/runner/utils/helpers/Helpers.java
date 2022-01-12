@@ -21,6 +21,7 @@ package lu.uni.serval.commons.runner.utils.helpers;
  */
 
 
+import lu.uni.serval.commons.runner.utils.configuration.BuildConfiguration;
 import lu.uni.serval.commons.runner.utils.configuration.Configuration;
 import lu.uni.serval.commons.runner.utils.configuration.ConfigurationParser;
 
@@ -33,12 +34,12 @@ import java.nio.file.Paths;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class Helpers {
-    public static <T extends Configuration> T parseConfiguration(String resources, Class<T> type){
+    public static <T extends Configuration, U extends BuildConfiguration> T parseConfiguration(String resources, Class<T> mainType, Class<U> buildType){
         try {
             final URL resourceUrl = Helpers.class.getClassLoader().getResource(resources);
             final String path = Paths.get(resourceUrl.toURI()).toFile().getAbsolutePath();
 
-            return ConfigurationParser.parse(path, type);
+            return ConfigurationParser.parse(path, mainType, buildType);
         } catch (IOException | URISyntaxException e) {
             fail(String.format(
                     "Failed to parse configuration %s: [%s] %s",

@@ -36,21 +36,21 @@ public class ScriptRunner {
 
     private static final Logger logger = LogManager.getLogger(ScriptRunner.class);
 
-    private final Version version;
+    private final Version<?> version;
     private final Stage stage;
 
-    public ScriptRunner(Version version, Stage stage) {
+    public ScriptRunner(Version<?> version, Stage stage) {
         this.version = version;
         this.stage = stage;
     }
 
     public void run() throws IOException, InterruptedException {
-        final String beforeBuildCommand = version.getMavenConfiguration().getBeforeBuild();
+        final String beforeBuildCommand = version.getBuildConfiguration().getBeforeBuild();
 
         if(!beforeBuildCommand.isEmpty()){
             logger.printf(Level.INFO, "Start %s Build Script...", stage.name());
             final String name = String.format("Before Build [%s]", beforeBuildCommand.split("\\s+", 2)[0]);
-            new ScriptLauncher(name, beforeBuildCommand, version.getMavenConfiguration().getFolder()).executeSync(1, TimeUnit.HOURS);
+            new ScriptLauncher(name, beforeBuildCommand, version.getBuildConfiguration().getFolder()).executeSync(1, TimeUnit.HOURS);
             logger.printf(Level.INFO, "Finish %s Build Script", stage.name());
         }
     }

@@ -1,14 +1,16 @@
 {
-  "repositories": [
-    {
-      "location": "https://github.com/kabinja/simple-spring-web.git",
-      "frequency": "LATEST",
-      "process configuration": {
-        "maven goals": [
-          "clean",
-          "test"
-        ]
+  "git": {
+    "repositories": [
+      {
+        "location": "https://github.com/kabinja/simple-spring-web.git",
+        "frequency": "LATEST",
+        "build configuration": {
+          "maven goals": [
+            "clean",
+            "test"
+          ]
+        }
       }
-    }
-  ]
+    ]
+  }
 }

@@ -39,10 +39,10 @@ public abstract class MavenRunner {
 
     private final String phase;
     private final Maven maven;
-    private final Version version;
+    private final Version<MavenConfiguration> version;
     private final File logsFolder;
 
-    protected MavenRunner(String phase, Version version, File logsFolder) {
+    protected MavenRunner(String phase, Version<MavenConfiguration> version, File logsFolder) {
         this.phase = phase;
         this.version = version;
         this.maven = new Maven(this.version);
@@ -53,7 +53,7 @@ public abstract class MavenRunner {
         return maven;
     }
 
-    protected Version getVersion() {
+    protected Version<MavenConfiguration> getVersion() {
         return version;
     }
 
@@ -74,12 +74,12 @@ public abstract class MavenRunner {
 
         return new MavenLauncher()
                 .withJavaParameter("maven.test.failure.ignore", "true")
-                .usingJavaVersion(new File(version.getMavenConfiguration().getJavaHome()))
-                .withMavenOptions(version.getMavenConfiguration().getMavenOptions())
-                .withJavaToolOptions(version.getMavenConfiguration().getJavaToolOptions())
-                .withEnvironmentVariables(version.getMavenConfiguration().getEnvironment())
-                .withJavaParameters(version.getMavenConfiguration().getArguments())
-                .usingProfile(version.getMavenConfiguration().getProfiles())
+                .usingJavaVersion(new File(version.getBuildConfiguration().getJavaHome()))
+                .withMavenOptions(version.getBuildConfiguration().getMavenOptions())
+                .withJavaToolOptions(version.getBuildConfiguration().getJavaToolOptions())
+                .withEnvironmentVariables(version.getBuildConfiguration().getEnvironment())
+                .withJavaParameters(version.getBuildConfiguration().getArguments())
+                .usingProfile(version.getBuildConfiguration().getProfiles())
                 .inDirectory(version.getLocation())
                 .writeOutputTo(logFile);
     }

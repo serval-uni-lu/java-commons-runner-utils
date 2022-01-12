@@ -21,8 +21,8 @@ package lu.uni.serval.commons.runner.utils.version;
  */
 
 
+import lu.uni.serval.commons.runner.utils.configuration.BuildConfiguration;
 import lu.uni.serval.commons.runner.utils.configuration.FolderConfiguration;
-import lu.uni.serval.commons.runner.utils.configuration.MavenConfiguration;
 
 import java.io.File;
 import java.time.LocalDate;
@@ -35,17 +35,17 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class FolderProvider implements VersionProvider {
+public class FolderProvider<T extends BuildConfiguration> implements VersionProvider<T> {
     private final File rootFolder;
     private final FolderConfiguration.NameFormat nameFormat;
     private final String dateFormat;
-    private final MavenConfiguration mavenConfiguration;
+    private final T buildConfiguration;
 
-    public FolderProvider(File rootFolder, FolderConfiguration.NameFormat nameFormat, String dateFormat, MavenConfiguration mavenConfiguration) {
+    public FolderProvider(File rootFolder, FolderConfiguration.NameFormat nameFormat, String dateFormat, T buildConfiguration) {
         this.rootFolder = rootFolder;
         this.nameFormat = nameFormat;
         this.dateFormat = dateFormat;
-        this.mavenConfiguration = mavenConfiguration;
+        this.buildConfiguration = buildConfiguration;
     }
 
     @Override
@@ -54,11 +54,11 @@ public class FolderProvider implements VersionProvider {
     }
 
     @Override
-    public Iterator<Version> iterator() {
+    public Iterator<Version<T>> iterator() {
         return new FolderIterator();
     }
 
-    class FolderIterator implements Iterator<Version> {
+    class FolderIterator implements Iterator<Version<T>> {
         private final List<File> targetFolders = getTargetFolders();
         private final Iterator<File> fileIterator = targetFolders.iterator();
 
@@ -68,7 +68,7 @@ public class FolderProvider implements VersionProvider {
         }
 
         @Override
-        public Version next() {
+        public Version<T> next() {
             final File folder = fileIterator.next();
             LocalDateTime date;
 
@@ -79,13 +79,13 @@ public class FolderProvider implements VersionProvider {
                 date = LocalDateTime.now();
             }
 
-            return new Version(
+            return new Version<>(
                     folder.getName(),
                     folder,
                     date,
                     "",
                     "",
-                    mavenConfiguration);
+                    buildConfiguration);
         }
 
         private List<File> getTargetFolders(){

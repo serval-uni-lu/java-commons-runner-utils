@@ -22,7 +22,9 @@ package lu.uni.serval.commons.runner.utils.configuration;
 
 
 import lu.uni.serval.commons.git.utils.Frequency;
+import lu.uni.serval.commons.runner.utils.build.maven.MavenConfiguration;
 import lu.uni.serval.commons.runner.utils.helpers.Helpers;
+import lu.uni.serval.commons.runner.utils.helpers.SimpleConfiguration;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -30,12 +32,13 @@ import static org.junit.jupiter.api.Assertions.*;
 class GitConfigurationTest {
     @Test
     void testMinimalConfiguration() {
-        final GitConfiguration configuration = Helpers.parseConfiguration("configurations/config-git-1.json", GitConfiguration.class);
+        final SimpleConfiguration configuration = Helpers.parseConfiguration("configurations/config-git-1.json", SimpleConfiguration.class, MavenConfiguration.class);
         assertNotNull(configuration);
 
-        assertEquals(1, configuration.getRepositories().size());
-        final RepositoryConfiguration repositoryConfiguration = configuration.getRepositories().iterator().next();
+        assertEquals(1, configuration.getGit().getRepositories().size());
+        final RepositoryConfiguration<MavenConfiguration> repositoryConfiguration = configuration.getGit().getRepositories().iterator().next();
         assertEquals("https://github.com/kabinja/simple-spring-web.git", repositoryConfiguration.getLocation());
         assertEquals(Frequency.LATEST, repositoryConfiguration.getFrequency());
+        assertEquals("clean", repositoryConfiguration.getBuildConfiguration().getGoals().get(0));
     }
 }

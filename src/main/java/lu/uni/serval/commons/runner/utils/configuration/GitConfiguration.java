@@ -26,18 +26,18 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Collections;
 import java.util.Set;
 
-public class GitConfiguration extends Configuration {
+public class GitConfiguration<T extends BuildConfiguration> extends Configuration {
     @JsonProperty(value = "repositories", required = true)
-    private Set<RepositoryConfiguration> repositories = Collections.emptySet();
+    private Set<RepositoryConfiguration<T>> repositories = Collections.emptySet();
 
     @JsonProperty(value = "token", required = true)
     private String token = "";
 
-    public Set<RepositoryConfiguration> getRepositories() {
+    public Set<RepositoryConfiguration<T>> getRepositories() {
         return repositories;
     }
 
-    public void setRepositories(Set<RepositoryConfiguration> repositories) {
+    public void setRepositories(Set<RepositoryConfiguration<T>> repositories) {
         this.repositories = repositories;
     }
 

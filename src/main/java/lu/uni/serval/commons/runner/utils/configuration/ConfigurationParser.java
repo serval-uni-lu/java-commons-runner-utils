@@ -40,26 +40,43 @@ public class ConfigurationParser {
 
     private static final Logger logger = LogManager.getLogger(ConfigurationParser.class);
 
-    public static <T extends Configuration> T parse(String config, Class<T> type) throws IOException {
+    public static <T extends Configuration, U extends BuildConfiguration> T parse(String config, Class<T> main, Class<U> build) throws IOException {
         File file = new File(config);
 
         if(!file.exists()){
             throw new IOException(String.format("Configuration file '%s' does not exist!", file.getAbsolutePath()));
         }
 
+        final SimpleModule buildModule = new SimpleModule("BuildModule");
+        buildModule.addDeserializer(BuildConfiguration.class, new BuildDeserializer<>(build));
+
         final ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModules(new Jdk8Module(), new FolderModule<>(file.getParentFile(), type));
+        mapper.registerModules(new Jdk8Module(), buildModule, new FolderModule<>(file.getParentFile(), main));
         mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
 
-        final T mercatorConfiguration = mapper.readValue(file, type);
+        final T configuration = mapper.readValue(file, main);
 
         logger.printf(Level.INFO,
                 "Configuration loaded from '%s'",
                 config
         );
 
-        return mercatorConfiguration;
+        return configuration;
     }
+
+    public static class BuildDeserializer<U extends BuildConfiguration> extends JsonDeserializer<U> {
+        private final Class<U> build;
+
+        public BuildDeserializer(Class<U> build) {
+            this.build = build;
+        }
+
+        @Override
+        public U deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
+            return jp.readValueAs(build);
+        }
+    }
+
 
     public static class FolderModule<T extends Configuration> extends SimpleModule {
         private final Class<T> type;
