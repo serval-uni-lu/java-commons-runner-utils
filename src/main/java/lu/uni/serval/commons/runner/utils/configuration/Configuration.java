@@ -21,16 +21,27 @@ package lu.uni.serval.commons.runner.utils.configuration;
  */
 
 
-import java.io.File;
-
 public abstract class Configuration {
-    private File folder = null;
+    protected  Configuration parent;
+    private final Variables variableList = new Variables();
 
-    public File getFolder(){
-        return folder;
+    public void registerVariable(String key, String value){
+        getVariables().register(key, value);
     }
 
-    public void setFolder(File folder){
-        this.folder = folder;
+    public String getResolved(String text){
+        return getVariables().resolve(text);
+    }
+
+    protected Variables getVariables(){
+        if(parent != null){
+            return parent.getVariables();
+        }
+
+        return variableList;
+    }
+
+    public void setParent(Configuration parent){
+        this.parent = parent;
     }
 }

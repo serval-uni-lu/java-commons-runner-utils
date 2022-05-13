@@ -35,5 +35,6 @@ public class SimpleConfiguration extends Configuration {
 
     public void setGit(GitConfiguration<MavenConfiguration> git) {
         this.git = git;
+        this.git.setParent(this);
     }
 }

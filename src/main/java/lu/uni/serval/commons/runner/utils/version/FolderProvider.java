@@ -23,6 +23,7 @@ package lu.uni.serval.commons.runner.utils.version;
 
 import lu.uni.serval.commons.runner.utils.configuration.BuildConfiguration;
 import lu.uni.serval.commons.runner.utils.configuration.FolderConfiguration;
+import lu.uni.serval.commons.runner.utils.configuration.Variables;
 
 import java.io.File;
 import java.time.LocalDate;
@@ -79,6 +80,7 @@ public class FolderProvider<T extends BuildConfiguration> implements VersionProv
                 date = LocalDateTime.now();
             }
 
+            buildConfiguration.registerVariable(Variables.BUILD_FOLDER, folder.getName());
             return new Version<>(
                     folder.getName(),
                     folder,

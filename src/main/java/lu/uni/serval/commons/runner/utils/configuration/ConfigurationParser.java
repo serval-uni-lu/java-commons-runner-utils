@@ -26,9 +26,6 @@ import java.io.IOException;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.deser.BeanDeserializerModifier;
-import com.fasterxml.jackson.databind.deser.ResolvableDeserializer;
-import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import org.apache.logging.log4j.Level;
@@ -51,10 +48,12 @@ public class ConfigurationParser {
         buildModule.addDeserializer(BuildConfiguration.class, new BuildDeserializer<>(build));
 
         final ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModules(new Jdk8Module(), buildModule, new FolderModule<>(file.getParentFile(), main));
+        mapper.registerModules(new Jdk8Module(), buildModule);
         mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
 
         final T configuration = mapper.readValue(file, main);
+
+        configuration.registerVariable( Variables.CONFIGURATION_FOLDER, file.getParentFile().getAbsolutePath());
 
         logger.printf(Level.INFO,
                 "Configuration loaded from '%s'",
@@ -76,57 +75,4 @@ public class ConfigurationParser {
             return jp.readValueAs(build);
         }
     }
-
-
-    public static class FolderModule<T extends Configuration> extends SimpleModule {
-        private final Class<T> type;
-        private final File folder;
-
-        FolderModule(File folder, Class<T> type){
-            this.folder = folder;
-            this.type = type;
-        }
-
-        @Override
-        public void setupModule(SetupContext context) {
-            super.setupModule(context);
-            context.addBeanDeserializerModifier(new BeanDeserializerModifier()
-            {
-                @Override public JsonDeserializer<?> modifyDeserializer(DeserializationConfig config, BeanDescription beanDesc, JsonDeserializer<?> deserializer)
-                {
-                    if (type.isAssignableFrom(beanDesc.getBeanClass())){
-                        return new Modifier<>(type, (JsonDeserializer<T>)deserializer, folder);
-                    }
-
-                    return deserializer;
-                }
-            });
-        }
-    }
-
-    public static class Modifier<T extends Configuration> extends StdDeserializer<T> implements ResolvableDeserializer{
-        private final transient JsonDeserializer<T> defaultDeserializer;
-        private final File folder;
-
-        public Modifier(Class<T> type, JsonDeserializer<T> defaultDeserializer, File folder) {
-            super(type);
-
-            this.defaultDeserializer = defaultDeserializer;
-            this.folder = folder;
-        }
-
-        @Override
-        public void resolve(DeserializationContext context) throws JsonMappingException {
-            ((ResolvableDeserializer) defaultDeserializer).resolve(context);
-        }
-
-        @Override
-        public T deserialize(JsonParser p, DeserializationContext context) throws IOException {
-            T configuration = defaultDeserializer.deserialize(p, context);
-            configuration.setFolder(this.folder);
-
-            return configuration;
-        }
-    }
-
 }

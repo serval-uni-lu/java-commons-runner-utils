@@ -120,6 +120,7 @@ public class RepositoryConfiguration<T extends BuildConfiguration> extends Confi
 
     public void setProcessConfiguration(T buildConfiguration) {
         this.buildConfiguration = buildConfiguration;
+        this.buildConfiguration.parent = this;
     }
 
     public String[] getCherryPick() {

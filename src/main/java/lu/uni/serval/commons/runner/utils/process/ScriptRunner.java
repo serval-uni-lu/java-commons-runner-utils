@@ -20,11 +20,14 @@ package lu.uni.serval.commons.runner.utils.process;
  * #L%
  */
 
+import lu.uni.serval.commons.runner.utils.configuration.ScriptConfiguration;
+import lu.uni.serval.commons.runner.utils.configuration.Variables;
 import lu.uni.serval.commons.runner.utils.version.Version;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
@@ -45,13 +48,43 @@ public class ScriptRunner {
     }
 
     public void run() throws IOException, InterruptedException {
-        final String beforeBuildCommand = version.getBuildConfiguration().getBeforeBuild();
+        final ScriptConfiguration configuration = getConfiguration();
+        final File directory = getDirectory(configuration);
 
-        if(!beforeBuildCommand.isEmpty()){
+        if(!configuration.getCommand().isEmpty()){
             logger.printf(Level.INFO, "Start %s Build Script...", stage.name());
-            final String name = String.format("Before Build [%s]", beforeBuildCommand.split("\\s+", 2)[0]);
-            new ScriptLauncher(name, beforeBuildCommand, version.getBuildConfiguration().getFolder()).executeSync(1, TimeUnit.HOURS);
+            final String name = String.format("Before Build [%s]", configuration.getCommand().split("\\s+", 2)[0]);
+            new ScriptLauncher(name, configuration.getCommand(), directory).executeSync(1, TimeUnit.HOURS);
             logger.printf(Level.INFO, "Finish %s Build Script", stage.name());
         }
+    }
+
+    private ScriptConfiguration getConfiguration() throws IOException {
+        ScriptConfiguration configuration;
+
+        if(stage == Stage.BEFORE){
+            configuration = version.getBuildConfiguration().getBeforeBuild();
+        }
+        else if(stage == Stage.AFTER) {
+            configuration = version.getBuildConfiguration().getAfterBuild();
+        }
+        else{
+            throw new IOException(String.format("Script stage %s is not implemented", stage.name()));
+        }
+
+        return configuration;
+    }
+
+    private File getDirectory(ScriptConfiguration configuration){
+        final String pathName = configuration.getResolved(configuration.getDirectory());
+
+        File directory = new File(pathName);
+
+        if(!directory.isAbsolute()){
+            String configurationFolder = configuration.getResolved("{" + Variables.CONFIGURATION_FOLDER + "}");
+            directory = new File(configurationFolder, pathName);
+        }
+
+        return directory;
     }
 }

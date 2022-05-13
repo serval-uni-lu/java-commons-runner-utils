@@ -22,25 +22,27 @@ package lu.uni.serval.commons.runner.utils.configuration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class BuildConfiguration  extends Configuration{
+public class BuildConfiguration extends Configuration{
     @JsonProperty(value = "run before")
-    String beforeBuild = "";
+    ScriptConfiguration beforeBuild;
     @JsonProperty(value = "run after")
-    String afterBuild = "";
+    ScriptConfiguration afterBuild;
 
-    public String getBeforeBuild() {
+    public ScriptConfiguration getBeforeBuild() {
         return beforeBuild;
     }
 
-    public void setBeforeBuild(String beforeBuild) {
+    public void setBeforeBuild(ScriptConfiguration beforeBuild) {
         this.beforeBuild = beforeBuild;
+        this.beforeBuild.parent = this;
     }
 
-    public String getAfterBuild() {
+    public ScriptConfiguration getAfterBuild() {
         return afterBuild;
     }
 
-    public void setAfterBuild(String afterBuild) {
+    public void setAfterBuild(ScriptConfiguration afterBuild) {
         this.afterBuild = afterBuild;
+        this.afterBuild.parent = this;
     }
 }

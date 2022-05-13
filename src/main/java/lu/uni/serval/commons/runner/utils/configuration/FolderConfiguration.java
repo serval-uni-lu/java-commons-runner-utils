@@ -71,5 +71,6 @@ public class FolderConfiguration<T extends BuildConfiguration> extends Configura
 
     public void setBuildConfiguration(T buildConfiguration) {
         this.buildConfiguration = buildConfiguration;
+        this.buildConfiguration.parent = this;
     }
 }

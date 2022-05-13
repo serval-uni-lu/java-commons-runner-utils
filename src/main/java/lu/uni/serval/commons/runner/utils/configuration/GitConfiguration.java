@@ -39,6 +39,7 @@ public class GitConfiguration<T extends BuildConfiguration> extends Configuratio
 
     public void setRepositories(Set<RepositoryConfiguration<T>> repositories) {
         this.repositories = repositories;
+        this.repositories.forEach(r -> r.parent = this);
     }
 
     public String getToken() {
@@ -48,6 +49,4 @@ public class GitConfiguration<T extends BuildConfiguration> extends Configuratio
     public void setToken(String token) {
         this.token = token;
     }
-
-
 }

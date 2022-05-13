@@ -29,6 +29,7 @@ import lu.uni.serval.commons.git.utils.LocalRepository;
 import lu.uni.serval.commons.runner.utils.configuration.BuildConfiguration;
 import lu.uni.serval.commons.runner.utils.configuration.GitConfiguration;
 import lu.uni.serval.commons.runner.utils.configuration.RepositoryConfiguration;
+import lu.uni.serval.commons.runner.utils.configuration.Variables;
 import lu.uni.serval.commons.runner.utils.os.OsUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -100,7 +101,7 @@ public class GitProvider<T extends BuildConfiguration> implements VersionProvide
                 GitUtils.checkout(repository.getGit(), commit.getId());
 
                 final LocalDateTime dateTime = commit.getDate().atZone(ZoneId.systemDefault()).toLocalDateTime();
-
+                buildConfiguration.registerVariable(Variables.BUILD_FOLDER, repository.getLocation().getAbsolutePath());
                 version = new Version<>(
                         repository.getRemoteUrl(),
                         repository.getLocation(),

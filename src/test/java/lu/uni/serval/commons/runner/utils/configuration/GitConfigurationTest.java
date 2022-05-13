@@ -27,6 +27,8 @@ import lu.uni.serval.commons.runner.utils.helpers.Helpers;
 import lu.uni.serval.commons.runner.utils.helpers.SimpleConfiguration;
 import org.junit.jupiter.api.Test;
 
+import java.net.URISyntaxException;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class GitConfigurationTest {
@@ -40,5 +42,25 @@ class GitConfigurationTest {
         assertEquals("https://github.com/kabinja/simple-spring-web.git", repositoryConfiguration.getLocation());
         assertEquals(Frequency.LATEST, repositoryConfiguration.getFrequency());
         assertEquals("clean", repositoryConfiguration.getBuildConfiguration().getGoals().get(0));
+    }
+
+    @Test
+    void testRootVariables() throws URISyntaxException {
+        final SimpleConfiguration configuration = Helpers.parseConfiguration("configurations/config-git-1.json", SimpleConfiguration.class, MavenConfiguration.class);
+        assertNotNull(configuration);
+
+        final String expectedConfigurationPath = Helpers.getResourcesFile("configurations/").getAbsolutePath();
+        final String resolvedConfigurationPath = configuration.getResolved("{" + Variables.CONFIGURATION_FOLDER + "}");
+        assertEquals(expectedConfigurationPath, resolvedConfigurationPath);
+    }
+
+    @Test
+    void testChildVariables() throws URISyntaxException {
+        final SimpleConfiguration configuration = Helpers.parseConfiguration("configurations/config-git-1.json", SimpleConfiguration.class, MavenConfiguration.class);
+        assertNotNull(configuration);
+
+        final String expectedConfigurationPath = Helpers.getResourcesFile("configurations/").getAbsolutePath();
+        final String resolvedConfigurationPath = configuration.getGit().getResolved("{" + Variables.CONFIGURATION_FOLDER + "}");
+        assertEquals(expectedConfigurationPath, resolvedConfigurationPath);
     }
 }
