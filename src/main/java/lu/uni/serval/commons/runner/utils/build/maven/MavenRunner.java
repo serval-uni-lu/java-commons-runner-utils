@@ -81,6 +81,7 @@ public abstract class MavenRunner {
                 .withJavaParameters(version.getBuildConfiguration().getArguments())
                 .usingProfile(version.getBuildConfiguration().getProfiles())
                 .inDirectory(version.getLocation())
+                .forModules(version.getBuildConfiguration().getModules())
                 .writeOutputTo(logFile);
     }
 

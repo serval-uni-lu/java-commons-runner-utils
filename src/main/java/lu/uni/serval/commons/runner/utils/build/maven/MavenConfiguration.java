@@ -45,6 +45,9 @@ public class MavenConfiguration extends BuildConfiguration {
     @JsonProperty(value = "maven goals")
     List<String> goals = Collections.emptyList();
 
+    @JsonProperty(value = "maven modules")
+    List<String> modules = Collections.emptyList();
+
     public String getJavaHome() {
         return javaHome;
     }
@@ -99,5 +102,13 @@ public class MavenConfiguration extends BuildConfiguration {
 
     public void setGoals(List<String> goals) {
         this.goals = goals;
+    }
+
+    public List<String> getModules() {
+        return modules;
+    }
+
+    public void setModules(List<String> modules) {
+        this.modules = modules;
     }
 }
